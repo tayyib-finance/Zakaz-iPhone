@@ -48,22 +48,22 @@
   </div>
 
   <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 1</div>
+    <div class="supplier-title">🏪 Поставщик 1 (Ахмед)</div>
     <textarea id="supplier1" placeholder="Вставьте прайс..."></textarea>
   </div>
 
   <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 2</div>
+    <div class="supplier-title">🏪 Поставщик 2 (Абдул)</div>
     <textarea id="supplier2" placeholder="Вставьте прайс..."></textarea>
   </div>
 
   <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 3 (Ахмед)</div>
+    <div class="supplier-title">🏪 Поставщик 3 (Дубай)</div>
     <textarea id="supplier3" placeholder="Вставьте прайс..."></textarea>
   </div>
 
   <div class="supplier-box" style="border-color: #f5c76a;">
-    <div class="supplier-title">🇦🇪 Поставщик 4 (Дубай в AED)</div>
+    <div class="supplier-title">🇦🇪 Поставщик 4 (Австралия)</div>
     <textarea id="supplier4" placeholder="Вставьте прайс..."></textarea>
   </div>
 
@@ -83,7 +83,7 @@
     document.getElementById('page-' + tab).classList.add('active');
   }
 
-  // Умный парсер (игнорирует скобки)
+  // Ультра-парсер для любых форматов
   function parseSupplierText(text) {
     let result = {}; 
     if(!text) return result;
@@ -93,51 +93,67 @@
     
     const lines = text.split('\n');
     lines.forEach(rawLine => {
-      let line = rawLine.trim();
+      // Очистка от лишних символов
+      let line = rawLine.trim().replace(/[🇦🇪🇦🇺🇦🇪🇷🇺]/g, ''); 
       if (!line) return;
-
-      // Убираем всё, что в скобках (например, (1Sim+eSim))
-      line = line.replace(/\(.*?\)/g, '').trim();
-
-      // 1. Ищем строку с моделью и памятью (напр. "18 Pro Max 1TB" или "Iph 18 Pro 256GB")
-      const modelMatch = line.match(/(?:Iph\s*)?(1[5-8]|11|12|13|14)(?:\s+Pro Max|\s+Pro|\s+Plus)?/i);
-      const storageMatch = line.match(/(64|128|256|512|1024|1TB|2TB)/i);
+      
+      line = line.replace(/\(.*?\)/g, '').trim(); // Убираем скобки
+      
+      // Ищем цену (число от 3 до 7 знаков)
+      const priceMatch = line.match(/\b\d{3,7}\b/);
+      
+      // Ищем модель (англ и рус)
+      const modelMatch = line.match(/(?:Iph\s*|iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*Pro|\s*про|\s*Макс|\s*Max|\s*Plus)?/i);
+      // Ищем память
+      const storageMatch = line.match(/\b(64|128|256|512|1024|1TB|2TB|1 Tb)\b/i);
 
       if (modelMatch && storageMatch) {
-         let m = modelMatch[0].replace(/Iph\s*/i, 'iPhone ');
-         currentModel = m.charAt(0).toUpperCase() + m.slice(1);
+         let baseNum = modelMatch[1];
+         let isMax = line.toLowerCase().includes('max') || line.toLowerCase().includes('макс');
+         let isPro = line.toLowerCase().includes('pro') || line.toLowerCase().includes('про');
+         let isPlus = line.toLowerCase().includes('plus') || line.toLowerCase().includes('плюс');
+
+         currentModel = `iPhone ${baseNum}`;
+         if (isPro) currentModel += ' Pro';
+         if (isMax) currentModel += ' Max';
+         if (isPlus) currentModel += ' Plus';
          
          let st = storageMatch[1].toUpperCase();
-         if (st === '1024') st = '1TB';
-         if (st === '2048') st = '2TB';
+         if (st === '1024' || st === '1 TB') st = '1TB';
+         if (st === '2048' || st === '2 TB') st = '2TB';
          if (st === '64') st = '64GB';
          if (st === '128') st = '128GB';
          if (st === '256') st = '256GB';
          if (st === '512') st = '512GB';
          currentStorage = st;
          
-         // Если цена написана на этой же строке (как в Поставщике 3)
-         const priceMatch = line.match(/\b\d{4,7}\b/);
          if (priceMatch) {
             const price = Number(priceMatch[0]);
-            let colorStr = line.replace(modelMatch[0], '').replace(storageMatch[1], '').replace(priceMatch[0], '').replace(/[-—]/g, '').trim();
+            let colorStr = line.replace(modelMatch[0], '').replace(storageMatch[0], '').replace(priceMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
             if (!colorStr) colorStr = "Standard";
+            // Нормализация цветов
+            if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
+            if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
             let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
             result[key] = price;
          }
          return; 
       }
 
-      // 2. Ищем только цвет и цену на новой строке (как в Дубае)
-      if (currentModel && currentStorage) {
-        const priceMatch = line.match(/\b\d{3,7}\b/);
-        if (priceMatch) {
-           const price = Number(priceMatch[0]);
-           let colorStr = line.replace(priceMatch[0], '').replace(/[-—]/g, '').trim();
-           if (!colorStr) colorStr = "Standard";
-           let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
-           result[key] = price;
-        }
+      // Если модель уже есть, ищем цвет и цену
+      if (currentModel && currentStorage && priceMatch) {
+         const price = Number(priceMatch[0]);
+         let colorStr = line.replace(priceMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
+         
+         // Игнорируем мусор
+         if (colorStr.toLowerCase().includes('гарант') || colorStr.toLowerCase().includes('адрес') || colorStr.toLowerCase().includes('номер') || colorStr.toLowerCase().includes('мест')) return;
+         
+         if (!colorStr) colorStr = "Standard";
+         if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
+         if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
+         
+         let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
+         result[key] = price;
       }
     });
     return result;
@@ -192,11 +208,11 @@
             </div>
             <div class="price-box ${price3 === minPrice ? 'bg-green' : (price3 ? 'bg-red' : 'bg-gray')}">
               <span class="label">ПОСТ 3</span>
-              <span class="val">${price3 ? price3.toLocaleString('ru-RU') + ' ₽' : '-'}</span>
+              <span class="val">${price3 ? price3.toLocaleString('ru-RU') + ' AED' : '-'}</span>
             </div>
             <div class="price-box ${price4 === minPrice ? 'bg-green' : (price4 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ДУБАЙ</span>
-              <span class="val">${price4 ? price4.toLocaleString('ru-RU') + ' AED' : '-'}</span>
+              <span class="label">ПОСТ 4</span>
+              <span class="val">${price4 ? price4.toLocaleString('ru-RU') + ' AUD' : '-'}</span>
             </div>
           </div>
         </div>
@@ -204,7 +220,7 @@
     });
 
     if(!resultsHtml) {
-        resultsHtml = '<div class="loading">Цены не распознаны. Проверьте текст.</div>';
+        resultsHtml = '<div class="loading">Цены не распознаны.</div>';
     }
 
     document.getElementById('results').innerHTML = resultsHtml;
