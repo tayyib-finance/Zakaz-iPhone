@@ -1,228 +1,138 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Сравнение цен</title>
-<style>
-  :root {
-    --bg-main: #0f111a; --bg-card: #1a1d2d; --text-main: #ffffff;
-    --text-muted: #8b92a5; --accent: #e11d48; --green: #10b981;
-    --btn-blue: #3b82f6; --yellow: #eab308; --border: #2a2e42;
-  }
-  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  body { background: var(--bg-main); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 70px; }
-  
-  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1d2d; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); z-index: 100; }
-  .nav-item { flex: 1; padding: 15px 0; text-align: center; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; border-top: 2px solid transparent; }
-  .nav-item.active { color: var(--green); border-top-color: var(--green); background: #202436; }
+// Функция нормализации текста для точного поиска ключевых слов
+function normalizeText(text) {
+    if (!text) return '';
+    return text.toLowerCase()
+        .replace(/gb/g, '') // убираем GB, чтобы легче сравнивать память
+        .replace(/макс/g, 'max') // приводим русский "Макс" к "max"
+        .replace(/iph|iphone/g, '') // убираем мусорные префиксы
+        .replace(/burgun|burg/g, 'burgundy') // стандартизируем цвет Burgundy
+        .replace(/[^a-z0-9 ]/g, ' ') // заменяем лишние символы на пробелы
+        .replace(/\s+/g, ' ') // убираем лишние пробелы
+        .trim();
+}
 
-  .page { padding: 16px; display: none; }
-  .page.active { display: block; }
-  
-  .supplier-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-  .supplier-title { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .supplier-title.main { color: #a3e635; font-size: 15px; }
-  .supplier-box textarea { width: 100%; height: 120px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none; line-height: 1.5;}
-  
-  .compare-btn { background: #a3e635; color: #000; font-size: 16px; padding: 15px; border-radius: 12px; border: none; font-weight: 800; width: 100%; margin: 20px 0; cursor: pointer; }
-
-  .result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-  .result-title { font-size: 15px; font-weight: 700; color: #f5c76a; margin-bottom: 10px; }
-  .prices-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .price-box { border-radius: 8px; padding: 8px 4px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
-  .price-box .label { font-size: 10px; opacity: 0.8; margin-bottom: 4px; }
-  .price-box .val { font-size: 12px; font-weight: 700; }
-  
-  .bg-green { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #4ade80; }
-  .bg-red { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #f87171; }
-  .bg-gray { background: #1f2937; border: 1px solid #374151; color: #9ca3af; }
-  
-  .loading { text-align: center; color: var(--text-muted); padding: 20px; }
-</style>
-</head>
-<body>
-
-<div id="page-deals" class="page active">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-    <h1 style="font-size: 20px; margin: 0;">📱 Сравнение цен</h1>
-  </div>
-
-  <div class="supplier-box">
-    <div class="supplier-title main">⭐ Поставщик 1 (Главный - Ахмед)</div>
-    <textarea id="supplier1" placeholder="Вставьте прайс Ахмеда..."></textarea>
-  </div>
-
-  <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 2</div>
-    <textarea id="supplier2" placeholder="Вставьте прайс..."></textarea>
-  </div>
-
-  <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 3 (Дубай)</div>
-    <textarea id="supplier3" placeholder="Вставьте прайс..."></textarea>
-  </div>
-
-  <div class="supplier-box" style="border-color: #f5c76a;">
-    <div class="supplier-title">🇦🇪 Поставщик 4 (Австралия/Дубай)</div>
-    <textarea id="supplier4" placeholder="Вставьте прайс..."></textarea>
-  </div>
-
-  <button class="compare-btn" onclick="comparePrices()">Сравнить цены</button>
-
-  <div id="results"></div>
-</div>
-
-<div class="bottom-nav">
-  <div class="nav-item active" onclick="switchTab('deals')">📊 Сравнение</div>
-</div>
-
-<script>
-  function switchTab(tab) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('page-' + tab).classList.add('active');
-  }
-
-  // Парсер с сохранением порядка и строгим форматом
-  function parseSupplierText(text, isDubai = false) {
-    let result = []; 
-    if(!text) return result;
-
-    let currentModel = "";
-    let currentStorage = "";
-    
+// 1. Парсер Ахмеда (ГЛАВНЫЙ): возвращает массив объектов строго по порядку
+function parseAhmed(text) {
     const lines = text.split('\n');
-    lines.forEach(rawLine => {
-      let line = rawLine.trim().replace(/[🇦🇪🇦🇺🇦🇪🇷🇺]/g, ''); 
-      if (!line) return;
-      
-      line = line.replace(/\(.*?\)/g, '').trim(); // Убираем скобки
-      
-      // Ищем цену. Для Дубая от 1000, для остальных от 10000
-      const minPrice = isDubai ? 1000 : 10000;
-      const priceMatches = line.match(new RegExp(`\\b\\d{${isDubai ? 3 : 5},7}\\b`, 'g'));
-      const price = priceMatches ? Number(priceMatches[priceMatches.length - 1]) : null;
-      
-      const modelMatch = line.match(/(?:Iph\s*|iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*Pro|\s*про|\s*Макс|\s*Max|\s*Plus)?/i);
-      const storageMatch = line.match(/\b(64|128|256|512|1024|1TB|2TB|1 Tb)\b/i);
+    const result = [];
+    
+    lines.forEach(line => {
+        if (!line.trim()) return;
+        // Извлекаем цену в конце строки (все цифры после дефиса или пробела)
+        const priceMatch = line.match(/(\d+)\s*$/);
+        if (!priceMatch) return;
+        
+        const price = parseInt(priceMatch[1], 10);
+        // Название модели — это всё, что до цены и дефиса
+        let name = line.replace(/-\s*\d+\s*$/, '').trim();
+        
+        // Извлекаем объем памяти для точного сопоставления (например, 256, 512, 1tb)
+        const storageMatch = name.match(/(256|512|1tb|1тб)/i);
+        const storage = storageMatch ? storageMatch[1].toLowerCase() : '';
 
-      if (modelMatch && storageMatch) {
-         let baseNum = modelMatch[1];
-         let isMax = line.toLowerCase().includes('max') || line.toLowerCase().includes('макс');
-         let isPro = line.toLowerCase().includes('pro') || line.toLowerCase().includes('про');
-         let isPlus = line.toLowerCase().includes('plus') || line.toLowerCase().includes('плюс');
-
-         currentModel = `iPhone ${baseNum}`;
-         if (isPro) currentModel += ' Pro';
-         if (isMax) currentModel += ' Max';
-         if (isPlus) currentModel += ' Plus';
-         
-         let st = storageMatch[1].toUpperCase();
-         if (st === '1024' || st === '1 TB') st = '1TB';
-         if (st === '2048' || st === '2 TB') st = '2TB';
-         if (st === '64') st = '64GB';
-         if (st === '128') st = '128GB';
-         if (st === '256') st = '256GB';
-         if (st === '512') st = '512GB';
-         currentStorage = st;
-         
-         if (price && price >= minPrice) {
-            let colorStr = line.replace(modelMatch[0], '').replace(storageMatch[0], '').replace(String(price), '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
-            if (!colorStr) colorStr = "Standard";
-            if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
-            if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
-            let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
-            result.push({ key: key, price: price });
-         }
-         return; 
-      }
-
-      if (currentModel && currentStorage && price && price >= minPrice) {
-         let colorStr = line.replace(String(price), '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
-         
-         if (colorStr.toLowerCase().includes('гарант') || colorStr.toLowerCase().includes('адрес') || colorStr.toLowerCase().includes('номер') || colorStr.toLowerCase().includes('мест')) return;
-         if (colorStr.match(/[A-Z]{3}\d+/) || colorStr.toLowerCase().includes('loop')) return; // Игнорируем часы
-         
-         if (!colorStr) colorStr = "Standard";
-         if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
-         if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
-         
-         let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
-         result.push({ key: key, price: price });
-      }
+        result.push({
+            originalName: name, // Сохраняем красивое имя от Ахмеда
+            searchStr: normalizeText(name), // Строка для поиска у других
+            storage: storage,
+            price: price
+        });
     });
     return result;
-  }
+}
 
-  function comparePrices() {
-    // Парсим всех
-    const list1 = parseSupplierText(document.getElementById('supplier1').value, false);
-    const list2 = parseSupplierText(document.getElementById('supplier2').value, false);
-    const list3 = parseSupplierText(document.getElementById('supplier3').value, true);
-    const list4 = parseSupplierText(document.getElementById('supplier4').value, true);
+// 2. Универсальный парсер для остальных поставщиков (Абдул, Дубай, Австралия)
+function parseOtherSuppliers(text) {
+    const lines = text.split('\n');
+    const items = [];
+    let currentHeader = ''; // Для контекста (например, если модель указана сверху, как у Дубая)
 
-    // Превращаем в словари для быстрого поиска
-    let dict2 = {}; list2.forEach(i => dict2[i.key] = i.price);
-    let dict3 = {}; list3.forEach(i => dict3[i.key] = i.price);
-    let dict4 = {}; list4.forEach(i => dict4[i.key] = i.price);
+    lines.forEach(line => {
+        const cleanLine = line.trim();
+        if (!cleanLine) return;
 
-    let resultsHtml = '';
+        // Ищем цену в строке: либо после @, либо после дефиса, либо просто в конце строки
+        let price = null;
+        let lineWithoutPrice = cleanLine;
 
-    // Берем ТОЛЬКО телефоны из прайса Ахмеда и идем по порядку
-    list1.forEach(item => {
-      const key = item.key;
-      const price1 = item.price;
-      
-      const price2 = dict2[key] || null;
-      const price3 = dict3[key] || null;
-      const price4 = dict4[key] || null;
+        const atMatch = cleanLine.match(/@\s*(\d+)/);
+        const dashMatch = cleanLine.match(/-\s*(\d+)\s*$/);
+        const endMatch = cleanLine.match(/\s+(\d+)\s*$/);
 
-      // Находим минимальную цену
-      let minPrice = Infinity;
-      if (price1) minPrice = Math.min(minPrice, price1);
-      if (price2) minPrice = Math.min(minPrice, price2);
-      if (price3) minPrice = Math.min(minPrice, price3);
-      if (price4) minPrice = Math.min(minPrice, price4);
-      
-      if (minPrice === Infinity) return;
+        if (atMatch) {
+            price = parseInt(atMatch[1], 10);
+            lineWithoutPrice = cleanLine.split('@')[0];
+        } else if (dashMatch) {
+            price = parseInt(dashMatch[1], 10);
+            lineWithoutPrice = cleanLine.replace(/-\s*\d+\s*$/, '');
+        } else if (endMatch && !cleanLine.match(/^[a-zA-Z\s]+$/)) { 
+            // Проверяем, чтобы строка не была просто текстом, и берем число в конце
+            price = parseInt(endMatch[1], 10);
+            lineWithoutPrice = cleanLine.replace(/\s+\d+\s*$/, '');
+        }
 
-      let parts = key.split(' ');
-      let color = parts.pop();
-      let storage = parts.pop();
-      let model = parts.join(' ');
-
-      resultsHtml += `
-        <div class="result-card">
-          <div class="result-title">${model} <span style="font-size:12px; color:#8b92a5">${storage} ${color}</span></div>
-          <div class="prices-grid">
-            <div class="price-box ${price1 === minPrice ? 'bg-green' : 'bg-red'}">
-              <span class="label">АХМЕД</span>
-              <span class="val">${price1.toLocaleString('ru-RU')} ₽</span>
-            </div>
-            <div class="price-box ${price2 === minPrice ? 'bg-green' : (price2 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ПОСТ 2</span>
-              <span class="val">${price2 ? price2.toLocaleString('ru-RU') + ' ₽' : '-'}</span>
-            </div>
-            <div class="price-box ${price3 === minPrice ? 'bg-green' : (price3 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ПОСТ 3</span>
-              <span class="val">${price3 ? price3.toLocaleString('ru-RU') + ' AED' : '-'}</span>
-            </div>
-            <div class="price-box ${price4 === minPrice ? 'bg-green' : (price4 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ПОСТ 4</span>
-              <span class="val">${price4 ? price4.toLocaleString('ru-RU') + ' AED' : '-'}</span>
-            </div>
-          </div>
-        </div>
-      `;
+        if (price !== null) {
+            // Объединяем текущий заголовок (если есть) и текст строки без цены
+            const fullText = currentHeader + ' ' + lineWithoutPrice;
+            items.push({
+                searchStr: normalizeText(fullText),
+                price: price
+            });
+        } else {
+            // Если в строке нет цены, возможно это заголовок модели (как "Iph 18 Pro 256GB" или "18 pro max 512GB🇦🇺")
+            if (cleanLine.toLowerCase().includes('18 pro') || cleanLine.toLowerCase().includes('max')) {
+                currentHeader = cleanLine;
+            }
+        }
     });
+    return items;
+}
 
-    if(!resultsHtml) {
-        resultsHtml = '<div class="loading">Цены не распознаны. Убедитесь, что вставлен текст Ахмеда.</div>';
+// 3. ГЛАВНАЯ ФУНКЦИЯ СРАВНЕНИЯ (Вызывать по кнопке "Сравнить цены")
+function comparePrices(ahmedRaw, abdulRaw, dubaiRaw, australiaRaw) {
+    // Шаг 1: Базой всегда является Ахмед
+    const baseProducts = parseAhmed(ahmedRaw);
+    
+    // Шаг 2: Парсим остальных поставщиков в плоские списки
+    const abdulItems = parseOtherSuppliers(abdulRaw);
+    const dubaiItems = parseOtherSuppliers(dubaiRaw);
+    const australiaItems = parseOtherSuppliers(australiaRaw);
+
+    // Вспомогательная функция поиска совпадений
+    function findPriceForProduct(baseProduct, supplierItems) {
+        // Ищем элемент, у которого в строке есть ключевые слова из базы Ахмеда
+        // Проверяем совпадение по памяти (обязательно) и по остальным словам
+        const match = supplierItems.find(item => {
+            // Проверка памяти
+            if (baseProduct.storage && !item.searchStr.includes(baseProduct.storage)) {
+                return false;
+            }
+            
+            // Проверяем, насколько слова из Ахмеда совпадают с позицией поставщика
+            const baseWords = baseProduct.searchStr.split(' ');
+            // Исключаем пустые слова
+            const requiredWords = baseWords.filter(w => w.length > 0 && w !== baseProduct.storage);
+            
+            // Если это Max модель, проверяем наличие слова max
+            if (baseProduct.searchStr.includes('max') && !item.searchStr.includes('max')) return false;
+            if (!baseProduct.searchStr.includes('max') && item.searchStr.includes('max')) return false;
+
+            // Считаем сколько ключевых слов (например, цвет: "black", "silver") совпало
+            return requiredWords.every(word => item.searchStr.includes(word));
+        });
+
+        return match ? match.price : '—';
     }
 
-    document.getElementById('results').innerHTML = resultsHtml;
-  }
-</script>
-</body>
-</html>
+    // Шаг 3: Сопоставляем данные строго по списку Ахмеда
+    const finalTable = baseProducts.map(prod => {
+        return {
+            model: prod.originalName,
+            ahmedPrice: prod.price + ' ₽',
+            abdulPrice: findPriceForProduct(prod, abdulItems) ? (findPriceForProduct(prod, abdulItems) + ' ₽') : '—',
+            dubaiPrice: findPriceForProduct(prod, dubaiItems) ? (findPriceForProduct(prod, dubaiItems) + ' AED') : '—',
+            australiaPrice: findPriceForProduct(prod, australiaItems) ? (findPriceForProduct(prod, australiaItems) + ' AED') : '—'
+        };
+    });
+
+    return finalTable;
+}
