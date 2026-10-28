@@ -84,7 +84,7 @@
     document.getElementById('page-' + tab).classList.add('active');
   }
 
-  // Парсер с сохранением порядка
+  // Парсер с сохранением порядка и строгим форматом
   function parseSupplierText(text, isDubai = false) {
     let result = []; 
     if(!text) return result;
@@ -99,7 +99,7 @@
       
       line = line.replace(/\(.*?\)/g, '').trim(); // Убираем скобки
       
-      // Ищем цену. Для Дубая от 1000, для остальных от 10000 (чтобы не путать с 256, 512)
+      // Ищем цену. Для Дубая от 1000, для остальных от 10000
       const minPrice = isDubai ? 1000 : 10000;
       const priceMatches = line.match(new RegExp(`\\b\\d{${isDubai ? 3 : 5},7}\\b`, 'g'));
       const price = priceMatches ? Number(priceMatches[priceMatches.length - 1]) : null;
@@ -163,43 +163,28 @@
     const list4 = parseSupplierText(document.getElementById('supplier4').value, true);
 
     // Превращаем в словари для быстрого поиска
-    let dict1 = {}; list1.forEach(i => dict1[i.key] = i.price);
     let dict2 = {}; list2.forEach(i => dict2[i.key] = i.price);
     let dict3 = {}; list3.forEach(i => dict3[i.key] = i.price);
     let dict4 = {}; list4.forEach(i => dict4[i.key] = i.price);
 
-    // Собираем уникальные ключи
-    let allKeys = new Set([
-      ...list1.map(i => i.key), ...list2.map(i => i.key), ...list3.map(i => i.key), ...list4.map(i => i.key)
-    ]);
-
-    // СОРТИРОВКА: Сначала те, что есть у Поставщика 1 (в том порядке, как он написал), потом остальные
-    let orderedKeys = list1.map(i => i.key);
-    
-    // Добавляем те, которых нет у Ахмеда, но есть у других
-    allKeys.forEach(k => {
-      if (!orderedKeys.includes(k)) orderedKeys.push(k);
-    });
-    
-    // Убираем дубликаты ключей из orderedKeys
-    orderedKeys = [...new Set(orderedKeys)];
-
     let resultsHtml = '';
 
-    orderedKeys.forEach(key => {
-      const price1 = dict1[key] || null;
+    // Берем ТОЛЬКО телефоны из прайса Ахмеда и идем по порядку
+    list1.forEach(item => {
+      const key = item.key;
+      const price1 = item.price;
+      
       const price2 = dict2[key] || null;
       const price3 = dict3[key] || null;
       const price4 = dict4[key] || null;
 
-      // Находим минимальную цену (только среди тех, где она есть)
+      // Находим минимальную цену
       let minPrice = Infinity;
       if (price1) minPrice = Math.min(minPrice, price1);
       if (price2) minPrice = Math.min(minPrice, price2);
       if (price3) minPrice = Math.min(minPrice, price3);
       if (price4) minPrice = Math.min(minPrice, price4);
       
-      // Если минимальную не нашли (все null), пропускаем
       if (minPrice === Infinity) return;
 
       let parts = key.split(' ');
@@ -211,9 +196,9 @@
         <div class="result-card">
           <div class="result-title">${model} <span style="font-size:12px; color:#8b92a5">${storage} ${color}</span></div>
           <div class="prices-grid">
-            <div class="price-box ${price1 === minPrice ? 'bg-green' : (price1 ? 'bg-red' : 'bg-gray')}">
+            <div class="price-box ${price1 === minPrice ? 'bg-green' : 'bg-red'}">
               <span class="label">АХМЕД</span>
-              <span class="val">${price1 ? price1.toLocaleString('ru-RU') + ' ₽' : '-'}</span>
+              <span class="val">${price1.toLocaleString('ru-RU')} ₽</span>
             </div>
             <div class="price-box ${price2 === minPrice ? 'bg-green' : (price2 ? 'bg-red' : 'bg-gray')}">
               <span class="label">ПОСТ 2</span>
@@ -233,7 +218,7 @@
     });
 
     if(!resultsHtml) {
-        resultsHtml = '<div class="loading">Цены не распознаны. Проверьте формат.</div>';
+        resultsHtml = '<div class="loading">Цены не распознаны. Убедитесь, что вставлен текст Ахмеда.</div>';
     }
 
     document.getElementById('results').innerHTML = resultsHtml;
