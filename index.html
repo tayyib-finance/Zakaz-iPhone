@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Сравнение цен и Заказ</title>
+<title>Сравнение цен</title>
 <style>
   :root {
     --bg-main: #0f111a; --bg-card: #1a1d2d; --text-main: #ffffff;
@@ -19,23 +19,13 @@
 
   .page { padding: 16px; display: none; }
   .page.active { display: block; }
-  .btn { padding: 10px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; width: 100%;}
-  .btn-green { background: var(--green); color: #000; }
-  .btn-blue { background: var(--btn-blue); color: #fff; }
-  .btn-gray { background: #2a2e42; color: #fff; }
-  .btn-red { background: #ef4444; color: #fff; }
-  .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; border-radius: 6px;}
-  .btn-outline { background: transparent; border: 1px solid var(--btn-blue); color: var(--btn-blue); }
-
-  /* Панель добавления поставщиков */
+  
   .supplier-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
   .supplier-title { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .supplier-box textarea { width: 100%; height: 100px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none;}
+  .supplier-box textarea { width: 100%; height: 120px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none; line-height: 1.5;}
   
-  /* Кнопка Сравнить */
   .compare-btn { background: #a3e635; color: #000; font-size: 16px; padding: 15px; border-radius: 12px; border: none; font-weight: 800; width: 100%; margin: 20px 0; cursor: pointer; }
 
-  /* Результаты */
   .result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
   .result-title { font-size: 15px; font-weight: 700; color: #f5c76a; margin-bottom: 10px; }
   .prices-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -46,12 +36,6 @@
   .bg-green { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #4ade80; }
   .bg-red { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #f87171; }
   .bg-gray { background: #1f2937; border: 1px solid #374151; color: #9ca3af; }
-
-  /* Модалки */
-  .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
-  .modal.active { display: flex; }
-  .modal-content { background: var(--bg-card); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
-  .modal-content h2 { margin-top: 0; font-size: 18px; margin-bottom: 16px; }
   
   .loading { text-align: center; color: var(--text-muted); padding: 20px; }
 </style>
@@ -60,10 +44,9 @@
 
 <div id="page-deals" class="page active">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-    <h1 style="font-size: 20px; margin: 0;">📱 Заказ телефонов</h1>
+    <h1 style="font-size: 20px; margin: 0;">📱 Сравнение цен</h1>
   </div>
 
-  <!-- Блоки для вставки поставщиков -->
   <div class="supplier-box">
     <div class="supplier-title">🏪 Поставщик 1</div>
     <textarea id="supplier1" placeholder="Вставьте прайс..."></textarea>
@@ -75,7 +58,7 @@
   </div>
 
   <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 3</div>
+    <div class="supplier-title">🏪 Поставщик 3 (Ахмед)</div>
     <textarea id="supplier3" placeholder="Вставьте прайс..."></textarea>
   </div>
 
@@ -89,22 +72,20 @@
   <div id="results"></div>
 </div>
 
-<!-- МЕНЮ -->
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchTab('deals')">📊 Сравнение</div>
 </div>
 
 <script>
-  // Функция для переключения вкладок (на будущее)
   function switchTab(tab) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('page-' + tab).classList.add('active');
   }
 
-  // Парсер текста (понимает формат "Модель Память Цвет - Цена")
+  // Умный парсер (игнорирует скобки)
   function parseSupplierText(text) {
-    let result = {}; // Ключ: Модель+Память+Цвет, Значение: Цена
+    let result = {}; 
     if(!text) return result;
 
     let currentModel = "";
@@ -115,35 +96,45 @@
       let line = rawLine.trim();
       if (!line) return;
 
-      // 1. Ищем модель (напр. "Iph 18 Pro 256GB" или "18 Pro Max 512")
+      // Убираем всё, что в скобках (например, (1Sim+eSim))
+      line = line.replace(/\(.*?\)/g, '').trim();
+
+      // 1. Ищем строку с моделью и памятью (напр. "18 Pro Max 1TB" или "Iph 18 Pro 256GB")
       const modelMatch = line.match(/(?:Iph\s*)?(1[5-8]|11|12|13|14)(?:\s+Pro Max|\s+Pro|\s+Plus)?/i);
-      if (modelMatch && (line.toLowerCase().includes('iph') || line.toLowerCase().includes('pro'))) {
+      const storageMatch = line.match(/(64|128|256|512|1024|1TB|2TB)/i);
+
+      if (modelMatch && storageMatch) {
          let m = modelMatch[0].replace(/Iph\s*/i, 'iPhone ');
          currentModel = m.charAt(0).toUpperCase() + m.slice(1);
          
-         const storageMatch = line.match(/(64|128|256|512|1024|1TB|2TB)/i);
-         if (storageMatch) {
-             let st = storageMatch[1].toUpperCase();
-             if (st === '1024') st = '1TB';
-             if (st === '2048') st = '2TB';
-             if (st === '64') st = '64GB';
-             if (st === '128') st = '128GB';
-             if (st === '256') st = '256GB';
-             if (st === '512') st = '512GB';
-             currentStorage = st;
+         let st = storageMatch[1].toUpperCase();
+         if (st === '1024') st = '1TB';
+         if (st === '2048') st = '2TB';
+         if (st === '64') st = '64GB';
+         if (st === '128') st = '128GB';
+         if (st === '256') st = '256GB';
+         if (st === '512') st = '512GB';
+         currentStorage = st;
+         
+         // Если цена написана на этой же строке (как в Поставщике 3)
+         const priceMatch = line.match(/\b\d{4,7}\b/);
+         if (priceMatch) {
+            const price = Number(priceMatch[0]);
+            let colorStr = line.replace(modelMatch[0], '').replace(storageMatch[1], '').replace(priceMatch[0], '').replace(/[-—]/g, '').trim();
+            if (!colorStr) colorStr = "Standard";
+            let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
+            result[key] = price;
          }
          return; 
       }
 
-      // 2. Ищем цвет и цену
-      if (currentModel) {
-        const priceMatch = line.match(/\b\d{3,7}\b/); // Цена от 3 до 7 знаков
+      // 2. Ищем только цвет и цену на новой строке (как в Дубае)
+      if (currentModel && currentStorage) {
+        const priceMatch = line.match(/\b\d{3,7}\b/);
         if (priceMatch) {
            const price = Number(priceMatch[0]);
            let colorStr = line.replace(priceMatch[0], '').replace(/[-—]/g, '').trim();
            if (!colorStr) colorStr = "Standard";
-
-           // Создаем ключ (Модель + Память + Цвет)
            let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
            result[key] = price;
         }
@@ -152,7 +143,6 @@
     return result;
   }
 
-  // Сравнение цен
   function comparePrices() {
     const t1 = document.getElementById('supplier1').value;
     const t2 = document.getElementById('supplier2').value;
@@ -164,14 +154,11 @@
     const p3 = parseSupplierText(t3);
     const p4 = parseSupplierText(t4);
 
-    // Собираем все уникальные ключи (товары)
     let allKeys = new Set([
       ...Object.keys(p1), ...Object.keys(p2), ...Object.keys(p3), ...Object.keys(p4)
     ]);
 
     let resultsHtml = '';
-    
-    // Сортируем ключи (сначала Pro Max, потом по памяти)
     let sortedKeys = Array.from(allKeys).sort();
 
     sortedKeys.forEach(key => {
@@ -180,14 +167,12 @@
       const price3 = p3[key] || null;
       const price4 = p4[key] || null;
 
-      // Находим минимальную цену
       let minPrice = Infinity;
       if (price1) minPrice = Math.min(minPrice, price1);
       if (price2) minPrice = Math.min(minPrice, price2);
       if (price3) minPrice = Math.min(minPrice, price3);
       if (price4) minPrice = Math.min(minPrice, price4);
 
-      // Разделяем название на модель и цвет для красоты
       let parts = key.split(' ');
       let color = parts.pop();
       let storage = parts.pop();
@@ -219,7 +204,7 @@
     });
 
     if(!resultsHtml) {
-        resultsHtml = '<div class="loading">Не удалось распознать цены. Проверьте текст.</div>';
+        resultsHtml = '<div class="loading">Цены не распознаны. Проверьте текст.</div>';
     }
 
     document.getElementById('results').innerHTML = resultsHtml;
