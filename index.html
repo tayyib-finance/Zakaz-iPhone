@@ -42,7 +42,6 @@
   .tag { background: #333; padding: 2px 6px; border-radius: 4px; color: #ccc;}
   .tag.blue { background: #007aff; color: white; }
   .tag.green { background: #00ff88; color: #000; }
-  .tag.color { background: #555; }
 
   .compare-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
   .compare-item { text-align: center; padding: 8px 2px; border-radius: 5px; background: #1a1a20; border: 1px solid #333; font-size: 11px; font-weight: bold;}
@@ -105,17 +104,17 @@
     </div>
 
     <div class="compare-block">
-      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 1</div>
+      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 1 (Ахмед)</div>
       <textarea id="sup1" placeholder="Вставьте список 1..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(1)">Очистить 1</button>
     </div>
     <div class="compare-block">
-      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 2</div>
+      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 2 (Абдул)</div>
       <textarea id="sup2" placeholder="Вставьте список 2..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(2)">Очистить 2</button>
     </div>
     <div class="compare-block">
-      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 3</div>
+      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 3 (Ахмед 2)</div>
       <textarea id="sup3" placeholder="Вставьте список 3..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(3)">Очистить 3</button>
     </div>
@@ -136,65 +135,95 @@
   let compareData = { 1: [], 2: [], 3: [], 4: [] };
 
   function extractPriceAndName(line) {
+    // Ищем цену в самом конце строки (может быть через тире или пробел)
     const priceMatch = line.match(/(\d+)(?!.*\d)/); 
     if (!priceMatch) return null;
     const price = parseInt(priceMatch[1]);
     let name = line.substring(0, priceMatch.index).trim();
-    name = name.replace(/[-–—\s]+$/, '').trim(); 
+    name = name.replace(/[-–—\s]+$/, '').trim(); // Убираем тире в конце названия
     return { name: name, price: price };
   }
 
-  // УМНЫЙ ПАРСЕР ДЛЯ ДУБАЯ
+  // СПЕЦИАЛЬНЫЙ ПАРСЕР ДЛЯ ДУБАЯ (жестко отсекает всё, кроме айфонов)
   function parseDubaiText(text) {
     let parsed = [];
     let currentModel = "";
+    let currentSim = "eSIM"; // По умолчанию
     
     text.split('\n').forEach(line => {
       line = line.trim();
       if (!line) return;
       
-      if (line.toLowerCase().match(/(watch|band|loop|strap|case)/)) {
-          currentModel = ""; 
-          return; 
+      const lowerLine = line.toLowerCase();
+
+      // Отслеживаем тип симки по заголовкам
+      if (lowerLine.includes("nano sim") || lowerLine.includes("1sim+esim")) {
+          currentSim = "1SIM+eSIM";
+          return;
+      }
+      if (lowerLine.includes("esim") && !line.match(/\d+$/)) {
+          currentSim = "eSIM";
+          return;
       }
 
-      // Если в строке есть память (GB/TB) и нет цены в конце - это заголовок
+      // ЖЕСТКИЙ ФИЛЬТР: Игнорируем всё, что не похоже на iPhone
+      if (!lowerLine.includes('iph') && !lowerLine.includes('iphone') && !lowerLine.includes('pro')) {
+          // Если это заголовок модели, запоминаем его
+          if (line.match(/(GB|TB)/i) && !line.match(/\s+\d+$/)) {
+              currentModel = line;
+          }
+          return; // Всё остальное (часы, очки, ремешки) пропускаем
+      }
+
+      // Если строка содержит GB/TB и не содержит цену — это заголовок модели
       if (line.match(/(GB|TB)/i) && !line.match(/\s+\d+$/)) {
         currentModel = line;
         return;
       }
 
+      // Если есть цена, и мы знаем модель — добавляем
       const data = extractPriceAndName(line);
       if (data && currentModel) {
-        parsed.push({ name: `${currentModel} ${data.name}`, price: data.price });
+        parsed.push({ 
+            name: `${currentModel} ${data.name}`, 
+            price: data.price,
+            simType: currentSim
+        });
       }
     });
     return parsed;
   }
 
-  // УМНЫЙ ПАРСЕР ДЛЯ 1, 2, 3 (понимает, если eSIM написано отдельно)
+  // ПАРСЕР ДЛЯ ПОСТАВЩИКОВ 1, 2, 3
   function parseSupplierText(text) {
     let parsed = [];
-    let globalSimType = "";
+    let currentSim = "STANDARD"; 
 
     text.split('\n').forEach(line => {
       line = line.trim();
       if (!line) return;
 
-      // Если строка без цены и содержит "esim" - запоминаем, что дальше идут eSIM телефоны
-      if (!line.match(/\d+$/) && line.toLowerCase().includes('esim')) {
-          globalSimType = "ESIM";
-          return;
+      const lowerLine = line.toLowerCase();
+
+      // Отслеживаем глобальные заголовки SIM
+      if (!line.match(/\d+$/)) {
+          if (lowerLine.includes("esim") && !lowerLine.includes("1sim") && !lowerLine.includes("+")) {
+              currentSim = "ESIM";
+              return;
+          } else if (lowerLine.includes("1sim") || lowerLine.includes("+") || lowerLine.includes("nano")) {
+              currentSim = "1SIM+eSIM";
+              return;
+          }
       }
 
       const data = extractPriceAndName(line);
       if (data) {
-        // Если был глобальный заголовок eSIM, приклеиваем его к названию
-        let fullName = data.name;
-        if (globalSimType && !fullName.toLowerCase().includes('sim')) {
-            fullName += ` (${globalSimType})`;
-        }
-        parsed.push({ name: fullName, price: data.price });
+        // Определяем симку для конкретной строки, если она указана
+        let lineSim = currentSim;
+        if (lowerLine.includes('(esim)')) lineSim = "ESIM";
+        if (lowerLine.includes('(1sim+esim)') || lowerLine.includes('(1-sim+esim)')) lineSim = "1SIM+eSIM";
+
+        parsed.push({ name: data.name, price: data.price, simType: lineSim });
       }
     });
     return parsed;
@@ -292,45 +321,42 @@
 
     const usdRate = parseFloat(document.getElementById('usd-rate').value) || 85;
 
-    // МАКСИМАЛЬНО ГИБКАЯ ФУНКЦИЯ АНАЛИЗА
+    // НОРМАЛИЗАЦИЯ (приведение к единому ключу)
     function analyzeProductName(name) {
         let clean = name.toLowerCase();
         
-        // 1. Убираем русские буквы
+        // 1. Транслит
         const ruToEn = { 'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'e', 'ж':'zh', 'з':'z', 'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o', 'п':'p', 'р':'r', 'с':'s', 'т':'t', 'у':'u', 'ф':'f', 'х':'h', 'ц':'ts', 'ч':'ch', 'ш':'sh', 'щ':'sch', 'ъ':'', 'ы':'y', 'ь':'', 'э':'e', 'ю':'yu', 'я':'ya' };
         clean = clean.replace(/[а-яё]/g, char => ruToEn[char] || char);
 
-        // 2. Определяем ПАМЯТЬ (256, 512, 1TB и т.д.)
+        // 2. Память
         let memory = '';
         const memMatch = clean.match(/\b(64|128|256|512|1024|1tb|2tb)\b/i);
         if (memMatch) {
             memory = memMatch[1].toUpperCase();
             if (memory === '1024') memory = '1TB';
-            // Удаляем память из строки, чтобы она не мешала искать модель
             clean = clean.replace(memMatch[0], ''); 
         }
 
-        // 3. Определяем SIM (eSim или физическая)
-        let simType = 'STANDARD';
-        if (clean.includes('esim') || clean.includes('e sim')) {
-             simType = 'ESIM';
-        } else if (clean.includes('sim') || clean.includes('physical') || clean.includes('физ')) {
-             simType = 'SIM+ESIM';
-        }
-        // Удаляем все упоминания SIM
-        clean = clean.replace(/\b(esim|e sim|sim|1sim|2sim|physical|dual|физ)\b/g, '');
+        // 3. Определяем SIM по тексту (если он есть в названии)
+        let simType = '';
+        if (clean.includes('esim') || clean.includes('e sim')) simType = 'ESIM';
+        if (clean.includes('1sim') || clean.includes('+') || clean.includes('1-sim')) simType = '1SIM+eSIM';
+        clean = clean.replace(/\b(esim|e sim|sim|1sim|2sim|physical|dual|физ|1-sim)\b/g, '');
 
-        // 4. ОЧИЩАЕМ ОТ ЦВЕТОВ
-        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'glacier', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'bronze', 'alm', 'burgunby', 'glacir'];
+        // 4. Цвета
+        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'glacier', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'bronze', 'alm', 'burgunby', 'glacir', 'burgun', 'make'];
         colors.forEach(color => { clean = clean.replace(new RegExp(color, 'g'), ''); });
 
-        // 5. Убираем всё лишнее
+        // 5. Очистка мусора
         clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
         clean = clean.replace(/[^a-z0-9\s]/g, ' ');
         clean = clean.replace(/\s+/g, ' ').trim();
 
-        // Возвращаем ключ: Модель + Память + Симка
-        return `${clean} | ${memory || 'NOMEM'} | ${simType}`;
+        // Заменяем русские буквы в "макс" на английские для единообразия
+        clean = clean.replace(/\bмакс\b/g, 'max');
+
+        return `${clean} | ${memory || 'NOMEM'}`;
     }
 
     let allProducts = {};
@@ -338,18 +364,18 @@
     for (let i = 1; i <= 4; i++) {
         compareData[i].forEach(item => {
             const key = analyzeProductName(item.name);
-            if (!key || key.includes('NOMEM')) return; // Пропускаем, если не смогли найти память
+            if (!key || key.includes('NOMEM')) return; 
 
             if (!allProducts[key]) {
                 allProducts[key] = { 
                     displayName: item.name, 
                     memory: key.split('|')[1].trim(),
-                    simType: key.split('|')[2].trim(),
                     prices: {1: '-', 2: '-', 3: '-', 4: '-'} 
                 };
             }
             
             let finalPrice = item.price;
+            // Для Дубая пересчитываем в рубли по курсу
             if (i === 4) finalPrice = Math.round((item.price / 3.65) * usdRate);
 
             if (allProducts[key].prices[i] === '-' || finalPrice < allProducts[key].prices[i]) {
@@ -374,12 +400,11 @@
         let maxPrice = validPrices.length > 1 ? Math.max(...validPrices) : null; 
 
         let memTag = `<span class="tag">${prod.memory}</span>`;
-        let simTag = prod.simType === 'ESIM' ? '<span class="tag blue">eSIM</span>' : '<span class="tag green">SIM+eSIM</span>';
 
         html += `
           <div class="compare-row">
             <div class="compare-title">${prod.displayName}</div>
-            <div class="compare-tags">${memTag} ${simTag}</div>
+            <div class="compare-tags">${memTag}</div>
             <div class="compare-grid">
         `;
 
@@ -406,7 +431,7 @@
         html += `</div></div>`;
     });
 
-    document.getElementById('compare-results').innerHTML = html || '<div style="text-align:center; color:#666;">Нет данных для сравнения. Возможно, у поставщиков не указана память в названии.</div>';
+    document.getElementById('compare-results').innerHTML = html || '<div style="text-align:center; color:#666;">Нет данных для сравнения.</div>';
   }
 </script>
 
