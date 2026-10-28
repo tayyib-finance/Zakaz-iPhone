@@ -3,15 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FREE ZONE - Прайс</title>
+<title>FREE ZONE</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   body { background-color: #0f0f13; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; padding-bottom: 80px;}
   .container { max-width: 500px; margin: 0 auto; }
   
-  /* Панель управления */
-  .controls { background: #1a1a20; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-  textarea { width: 100%; height: 120px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
+  /* Переключатель вкладок (Прайс / Сравнение) */
+  .main-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+  .main-tab { flex: 1; padding: 12px; background: #1a1a20; color: #888; border: 1px solid #333; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
+  .main-tab.active { background: #007aff; color: white; border-color: #007aff; }
+
+  /* Общие стили для блоков */
+  .panel { background: #1a1a20; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+  textarea { width: 100%; height: 100px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
   
   .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
   .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; display: inline-block;}
@@ -23,28 +28,34 @@
   /* Каталог */
   .header-text { color: #e0a800; font-size: 14px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; text-align: center;}
   
-  .card { 
-    background: #1a1a20; border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; 
-    border: 1px solid #2a2a35;
-  }
+  .card { background: #1a1a20; border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; border: 1px solid #2a2a35; }
   .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;}
   .info { flex: 1; padding-right: 10px; }
   .title { font-weight: bold; font-size: 15px; margin-bottom: 2px; }
   .desc { color: #888; font-size: 12px; }
-  
   .price { font-size: 18px; font-weight: bold; color: #fff; white-space: nowrap;}
   
-  /* Поле ручной наценки в карточке */
   .manual-markup { display: flex; align-items: center; gap: 5px; margin-top: 8px; background: #0f0f13; padding: 5px 10px; border-radius: 6px; border: 1px solid #333;}
   .manual-markup span { font-size: 12px; color: #aaa; }
   .manual-markup input { width: 60px; background: transparent; border: none; color: #00ff88; font-size: 14px; font-weight: bold; outline: none; text-align: center;}
   
+  /* Сравнение */
+  .compare-block { background: #1a1a20; padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
+  .compare-block textarea { height: 80px; margin-bottom: 5px;}
+  .compare-block .btn-clear { padding: 8px; font-size: 12px; width: 100%; background: #333; color: #aaa; border-radius: 6px;}
+  
+  .compare-row { background: #0f0f13; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #333; }
+  .compare-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #e0a800;}
+  .compare-grid { display: flex; gap: 5px; font-size: 13px; }
+  .compare-item { flex: 1; text-align: center; padding: 8px 5px; border-radius: 5px; background: #1a1a20; border: 1px solid #333; }
+  .compare-item.best { background: rgba(0, 255, 136, 0.15); border-color: #00ff88; color: #00ff88; font-weight: bold; }
+  .compare-label { font-size: 10px; color: #888; display: block; margin-bottom: 4px;}
+
   .footer { background: #1a1a20; border: 1px solid #4a3a1a; border-radius: 12px; padding: 15px; margin-top: 20px; text-align: center; }
   .footer h4 { color: #e0a800; margin: 0 0 5px 0; font-size: 14px;}
   .footer p { font-size: 12px; color: #ccc; margin: 5px 0 10px 0; }
   .phone { color: #00ff88; font-size: 18px; font-weight: bold; text-decoration: none; }
   
-  /* Скрываем элементы управления при создании скриншота */
   .hide-on-capture { display: none !important; }
 </style>
 </head>
@@ -52,103 +63,127 @@
 
 <div class="container">
   
-  <!-- Панель управления (не попадет на скриншот) -->
-  <div class="controls" id="admin-controls">
-    <textarea id="input-text" placeholder="Вставьте список сюда (Например: 🇮🇩A57 8/256 Grey 33000)"></textarea>
-    
-    <div class="btn-group">
-      <button class="btn btn-green" onclick="processList()">Рассчитать</button>
-      <button class="btn btn-grey" onclick="clearList()">Очистить</button>
+  <!-- Главное меню -->
+  <div class="main-tabs">
+    <div class="main-tab active" id="tab-price" onclick="switchMainTab('price')">📱 Прайс для клиента</div>
+    <div class="main-tab" id="tab-compare" onclick="switchMainTab('compare')">📊 Сравнение поставщиков</div>
+  </div>
+
+  <!-- ВКЛАДКА 1: ПРАЙС -->
+  <div id="view-price" style="display: block;">
+    <div class="panel" id="admin-controls">
+      <textarea id="input-text" placeholder="Вставьте готовый список для клиента..."></textarea>
+      <div class="btn-group">
+        <button class="btn btn-green" onclick="processList()">Рассчитать</button>
+        <button class="btn btn-grey" onclick="clearPriceList()">Очистить</button>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-red" onclick="downloadImage()">📥 Скачать картинку</button>
+        <button class="btn btn-blue" onclick="sendToWhatsApp()">📲 В WhatsApp</button>
+      </div>
     </div>
-    
-    <div class="btn-group">
-      <button class="btn btn-red" onclick="downloadImage()">📥 Скачать картинку</button>
-      <button class="btn btn-blue" onclick="sendToWhatsApp()">📲 Отправить текст в WhatsApp</button>
+
+    <div id="capture-area">
+      <div class="header-text">
+        ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ
+      </div>
+
+      <div id="result-list">
+        <div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div>
+      </div>
+
+      <div class="footer">
+        <h4>💳 Доступна рассрочка</h4>
+        <p>Без банков и переплат</p>
+        <h4>🔥 Предзаказ ВЫГОДНЕЕ!</h4>
+        <p>Аванс всего 3000 ₽. Экономьте!</p>
+        <hr style="border-color: #333; margin: 10px 0;">
+        <p>Заказ по телефону / WhatsApp:</p>
+        <a href="tel:+79887836677" class="phone">+7 988 783-66-77</a>
+      </div>
     </div>
   </div>
 
-  <!-- Область для скриншота и просмотра -->
-  <div id="capture-area">
-    <div class="header-text">
-      ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ
+  <!-- ВКЛАДКА 2: СРАВНЕНИЕ -->
+  <div id="view-compare" style="display: none;">
+    
+    <!-- Блок Поставщик 1 -->
+    <div class="compare-block">
+      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 1</div>
+      <textarea id="sup1" placeholder="Вставьте список 1..."></textarea>
+      <button class="btn-clear" onclick="clearSupplier(1)">Очистить 1</button>
     </div>
 
-    <div id="result-list">
-      <div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div>
+    <!-- Блок Поставщик 2 -->
+    <div class="compare-block">
+      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 2</div>
+      <textarea id="sup2" placeholder="Вставьте список 2..."></textarea>
+      <button class="btn-clear" onclick="clearSupplier(2)">Очистить 2</button>
     </div>
 
-    <div class="footer">
-      <h4>💳 Доступна рассрочка</h4>
-      <p>Без банков и переплат</p>
-      <h4>🔥 Предзаказ ВЫГОДНЕЕ!</h4>
-      <p>Аванс всего 3000 ₽. Экономьте!</p>
-      <hr style="border-color: #333; margin: 10px 0;">
-      <p>Заказ по телефону / WhatsApp:</p>
-      <a href="tel:+79887836677" class="phone">+7 988 783-66-77</a>
+    <!-- Блок Поставщик 3 -->
+    <div class="compare-block">
+      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 3</div>
+      <textarea id="sup3" placeholder="Вставьте список 3..."></textarea>
+      <button class="btn-clear" onclick="clearSupplier(3)">Очистить 3</button>
     </div>
+
+    <button class="btn btn-green" onclick="runComparison()" style="margin-bottom: 20px;">Сравнить цены</button>
+    
+    <div id="compare-results"></div>
   </div>
 
 </div>
 
 <script>
-  let currentData = []; // Здесь храним рассчитанные данные
+  let currentPriceData = []; 
+  let compareData = { 1: [], 2: [], 3: [] };
 
-  function clearList() {
+  function switchMainTab(tab) {
+    document.getElementById('tab-price').classList.toggle('active', tab === 'price');
+    document.getElementById('tab-compare').classList.toggle('active', tab === 'compare');
+    document.getElementById('view-price').style.display = (tab === 'price') ? 'block' : 'none';
+    document.getElementById('view-compare').style.display = (tab === 'compare') ? 'block' : 'none';
+  }
+
+  // ================= ВКЛАДКА 1: ПРАЙС =================
+  function clearPriceList() {
     document.getElementById('input-text').value = '';
     document.getElementById('result-list').innerHTML = '<div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div>';
-    currentData = [];
+    currentPriceData = [];
   }
 
   function processList() {
     const rawText = document.getElementById('input-text').value;
-    
-    if (!rawText.trim()) {
-      alert("Сначала вставьте список!");
-      return;
-    }
+    if (!rawText.trim()) return alert("Сначала вставьте список!");
 
     const lines = rawText.split('\n');
-    currentData = [];
+    currentPriceData = [];
     
     lines.forEach(line => {
       line = line.trim();
       if (!line || line.includes('ПРЕДЗАКАЗ') || line.includes('ВЫДАЧА НА')) return;
-
-      // Ищем цену в конце строки
       const priceMatch = line.match(/^(.*?)\s+(\d+)$/);
       if (priceMatch) {
-        const name = priceMatch[1].trim();
-        const originalPrice = parseInt(priceMatch[2]);
-        
-        currentData.push({ 
-            name: name, 
-            originalPrice: originalPrice,
-            manualMarkup: 0 // Наценка по умолчанию 0
-        });
+        currentPriceData.push({ name: priceMatch[1].trim(), originalPrice: parseInt(priceMatch[2]), manualMarkup: 0 });
       }
     });
-    
-    renderList();
+    renderPriceList();
   }
 
-  function renderList() {
+  function renderPriceList() {
     const container = document.getElementById('result-list');
-    if (currentData.length === 0) return;
+    if (currentPriceData.length === 0) return;
 
     let html = '';
     const formatPrice = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-    currentData.forEach((item, index) => {
+    currentPriceData.forEach((item, index) => {
         const finalPrice = item.originalPrice + item.manualMarkup;
-
-        // Разбиваем на модель и характеристики для красоты
         let title = item.name;
         let desc = "";
         const specMatch = item.name.match(/(.*?)\s+(\d+\/\d+.*)/);
-        if (specMatch) {
-            title = specMatch[1];
-            desc = specMatch[2];
-        }
+        if (specMatch) { title = specMatch[1]; desc = specMatch[2]; }
 
         html += `
           <div class="card">
@@ -159,11 +194,9 @@
               </div>
               <div class="price">${formatPrice(finalPrice)} ₽</div>
             </div>
-            
-            <!-- Поле для ручной наценки (скроется на картинке) -->
             <div class="manual-markup hide-on-capture">
                 <span>Наценка: +</span>
-                <input type="number" value="${item.manualMarkup}" onchange="updateMarkup(${index}, this.value)"> ₽
+                <input type="number" value="${item.manualMarkup}" onchange="updatePriceMarkup(${index}, this.value)"> ₽
             </div>
           </div>
         `;
@@ -171,51 +204,107 @@
     container.innerHTML = html;
   }
 
-  // Обновление наценки для конкретного товара
-  function updateMarkup(index, value) {
-    currentData[index].manualMarkup = parseInt(value) || 0;
-    renderList(); // Перерисовываем, чтобы обновить итоговую цену
+  function updatePriceMarkup(index, value) {
+    currentPriceData[index].manualMarkup = parseInt(value) || 0;
+    renderPriceList();
   }
 
   function downloadImage() {
-    if (currentData.length === 0) return alert("Нет данных для картинки");
-    
-    const captureArea = document.getElementById('capture-area');
-    
-    // Временно скрываем поля ввода наценки
+    if (currentPriceData.length === 0) return alert("Нет данных");
     document.querySelectorAll('.hide-on-capture').forEach(el => el.style.display = 'none');
-
-    html2canvas(captureArea, {
-        scale: 2, 
-        backgroundColor: "#0f0f13",
-        useCORS: true
-    }).then(canvas => {
+    html2canvas(document.getElementById('capture-area'), { scale: 2, backgroundColor: "#0f0f13", useCORS: true }).then(canvas => {
         const link = document.createElement('a');
         link.download = 'prays.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
-        
-        // Возвращаем поля ввода обратно
         document.querySelectorAll('.hide-on-capture').forEach(el => el.style.display = 'flex');
     });
   }
 
   function sendToWhatsApp() {
-    if (currentData.length === 0) return alert("Нет данных для отправки");
-
+    if (currentPriceData.length === 0) return alert("Нет данных");
     const formatPrice = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    
     let message = "ПРЕДЗАКАЗ ДО 17:00\nВЫДАЧА НА СУББОТУ\n\n";
-    
-    currentData.forEach(item => {
-        const finalPrice = item.originalPrice + item.manualMarkup;
-        message += `${item.name} ${formatPrice(finalPrice)}\n`;
+    currentPriceData.forEach(item => { message += `${item.name} ${formatPrice(item.originalPrice + item.manualMarkup)}\n`; });
+    message += "\n💳 Доступна рассрочка\n🔥 Предзаказ ВЫГОДНЕЕ!\n\nЗаказ: +7 988 783-66-77";
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  }
+
+  // ================= ВКЛАДКА 2: СРАВНЕНИЕ =================
+  function clearSupplier(num) {
+    document.getElementById('sup' + num).value = '';
+    compareData[num] = [];
+    document.getElementById('compare-results').innerHTML = ''; // Очищаем результаты
+  }
+
+  function parseSupplierText(text) {
+    let parsed = [];
+    text.split('\n').forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      const priceMatch = line.match(/^(.*?)\s+(\d+)$/);
+      if (priceMatch) {
+        parsed.push({ name: priceMatch[1].trim(), price: parseInt(priceMatch[2]) });
+      }
+    });
+    return parsed;
+  }
+
+  function runComparison() {
+    compareData[1] = parseSupplierText(document.getElementById('sup1').value);
+    compareData[2] = parseSupplierText(document.getElementById('sup2').value);
+    compareData[3] = parseSupplierText(document.getElementById('sup3').value);
+
+    // Функция очистки названия (убираем флаги и цвета, оставляем модель + память)
+    function getBaseName(name) {
+        let clean = name.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
+        const specMatch = clean.match(/(.*?)\s+(\d+\/\d+)/);
+        if (specMatch) return (specMatch[1] + ' ' + specMatch[2]).toLowerCase().replace(/\s+/g, ' ');
+        return clean.toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    let allProducts = {};
+    for (let i = 1; i <= 3; i++) {
+        compareData[i].forEach(item => {
+            const key = getBaseName(item.name);
+            if (!allProducts[key]) allProducts[key] = { displayName: getBaseName(item.name).toUpperCase(), prices: {1: '-', 2: '-', 3: '-'} };
+            
+            // Если есть несколько цветов, берем самый дешевый
+            if (allProducts[key].prices[i] === '-' || item.price < allProducts[key].prices[i]) {
+                allProducts[key].prices[i] = item.price;
+            }
+        });
+    }
+
+    let html = '';
+    const formatPrice = (num) => num === '-' ? '-' : num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    const sortedKeys = Object.keys(allProducts).sort();
+
+    sortedKeys.forEach(key => {
+        const prod = allProducts[key];
+        let minPrice = Infinity;
+        let bestSupplier = null;
+        
+        for(let i=1; i<=3; i++) {
+            if(prod.prices[i] !== '-' && prod.prices[i] < minPrice) {
+                minPrice = prod.prices[i];
+                bestSupplier = i;
+            }
+        }
+
+        html += `
+          <div class="compare-row">
+            <div class="compare-title">${prod.displayName}</div>
+            <div class="compare-grid">
+              <div class="compare-item ${bestSupplier === 1 ? 'best' : ''}"><span class="compare-label">ПОСТ 1</span>${formatPrice(prod.prices[1])} ₽</div>
+              <div class="compare-item ${bestSupplier === 2 ? 'best' : ''}"><span class="compare-label">ПОСТ 2</span>${formatPrice(prod.prices[2])} ₽</div>
+              <div class="compare-item ${bestSupplier === 3 ? 'best' : ''}"><span class="compare-label">ПОСТ 3</span>${formatPrice(prod.prices[3])} ₽</div>
+            </div>
+          </div>
+        `;
     });
 
-    message += "\n💳 Доступна рассрочка\n🔥 Предзаказ ВЫГОДНЕЕ!\nАванс всего 3000 ₽.\n\nЗаказ по телефону / WhatsApp:\n+7 988 783-66-77";
-
-    // Открываем WhatsApp с готовым текстом
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    document.getElementById('compare-results').innerHTML = html || '<div style="text-align:center; color:#666;">Нет данных для сравнения.</div>';
   }
 </script>
 
