@@ -14,22 +14,16 @@
   body { background: var(--bg-main); color: var(--text-main); margin: 0; padding: 16px; padding-bottom: 40px; }
   
   .container { max-width: 600px; margin: 0 auto; }
-
   h2 { font-size: 18px; margin-bottom: 12px; color: #f5c76a; }
 
-  /* Блоки поставщиков */
   .supplier-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
   .supplier-title { font-size: 13px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
   .supplier-title.main { color: #a3e635; }
-  .supplier-box textarea { width: 100%; height: 80px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none; line-height: 1.4;}
+  .supplier-box textarea { width: 100%; height: 120px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none; line-height: 1.4;}
   
   .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; text-align: center; width: 100%;}
   .btn-compare { background: #a3e635; color: #000; margin: 15px 0; }
-  .btn-download { background: #ef4444; color: #fff; }
-  .btn-wa { background: #3b82f6; color: #fff; }
-  .btn-clear { background: #334155; color: #fff; }
 
-  /* Результаты сравнения */
   .result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
   .result-title { font-size: 14px; font-weight: 700; color: #f5c76a; margin-bottom: 8px; }
   .prices-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -40,30 +34,6 @@
   .bg-green { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #4ade80; }
   .bg-red { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; }
   .bg-gray { background: #1f2937; border: 1px solid #374151; color: #9ca3af; }
-
-  /* Блок наценки и витрины */
-  .markup-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 20px 0; }
-  .input-group { margin-bottom: 10px; }
-  .input-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-  .input-group input { width: 100%; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; outline: none;}
-
-  .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-bottom: 20px; overflow: hidden;}
-  .poster { padding: 30px 20px; text-align: center; border-radius: 22px; background: radial-gradient(circle at top, #2a0e14 0%, #0f111a 60%); }
-  .poster-title { font-size: 24px; font-weight: 900; margin: 0 0 6px; letter-spacing: 1px; color: #fff;}
-  .poster-subtitle { font-size: 11px; font-weight: 700; margin: 0 0 20px; text-transform: uppercase; letter-spacing: 1px; color: #e11d48;}
-  .poster-list { display: flex; flex-direction: column; gap: 10px; }
-  .poster-item { border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; text-align: left; gap: 10px; background: rgba(30, 15, 20, 0.7); border: 1px solid #4a202a; }
-  .p-info { flex: 1; min-width: 0; }
-  .p-model { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 4px;}
-  .p-desc { font-size: 11px; color: #8b92a5;}
-  .p-price-wrap { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
-  .p-price { font-size: 18px; font-weight: 800; white-space: nowrap; color: #4ade80;}
-  
-  .poster-footer { margin-top: 20px; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; text-align: left; border: 1px solid #3f2e14; background: rgba(63, 46, 20, 0.3); }
-  .footer-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #f5c76a; }
-  .footer-sub { font-size: 11px; font-weight: normal; margin-left: 24px; margin-top: -5px; color: #aaa;}
-  .footer-phone { margin-top: 5px; text-align: center; padding-top: 12px; border-top: 1px dashed #5a4020; }
-  .phone-number { font-size: 18px; font-weight: 800; letter-spacing: 1px; color: #4ade80; }
 </style>
 </head>
 <body>
@@ -91,114 +61,89 @@
   <button class="btn btn-compare" onclick="comparePrices()">Сравнить цены</button>
   <div id="results"></div>
 
-  <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
-    <h2>2. Наценка и Витрина для WhatsApp</h2>
-    
-    <div class="markup-box">
-      <div class="input-group">
-        <label>Ваша наценка (в рублях)</label>
-        <input type="number" id="markupInput" value="5000" placeholder="Например: 5000">
-      </div>
-      <button class="btn btn-compare" onclick="generatePosterFromText()">Рассчитать и показать витрину</button>
-    </div>
-
-    <div class="preview-container" id="posterContainer">
-      <div class="poster" id="posterBody">
-        <h1 class="poster-title">FREE ZONE</h1>
-        <p class="poster-subtitle">ЛУЧШИЕ ЦЕНЫ</p>
-        <div style="text-align: center; margin-bottom: 15px; font-size: 12px; color: #f5c76a; font-weight: 700;">
-          ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ
-        </div>
-        <div class="poster-list" id="posterList">
-           <p style="font-size:12px; text-align:center; opacity:0.6;">Сначала сделайте сравнение цен</p>
-        </div>
-        <div class="poster-footer">
-          <div class="footer-row"><span>💳</span> Доступна рассрочка</div>
-          <div class="footer-sub">Без банков и переплат</div>
-          <div class="footer-row" style="margin-top: 5px;"><span>🔥</span> Предзаказ ВЫГОДНЕЕ!</div>
-          <div class="footer-sub">Аванс всего 3000 ₽. Экономьте!</div>
-          <div class="footer-phone">
-            <div style="font-size: 11px; margin-bottom: 4px; opacity: 0.8; color: #aaa;">Заказ по телефону / WhatsApp:</div>
-            <div class="phone-number">+7 988 783-66-77</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <button class="btn btn-download" onclick="downloadPosterImage()">📥 Скачать фото</button>
-      <button class="btn btn-wa" onclick="copyPosterText()">📲 Текст в WhatsApp</button>
-    </div>
-  </div>
-
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-  let finalPosterItems = []; // Сюда сохраняем итоговый список для витрины
-
-  // Функция парсера
+  // Ультра-парсер (понимает скобки)
   function parseSupplierText(text, isDubai = false) {
     let result = []; 
     if(!text) return result;
-    let currentModel = ""; let currentStorage = "";
-    const lines = text.split('\n');
-    
-    lines.forEach(rawLine => {
-      let line = rawLine.trim().replace(/[🇦🇪🇦🇺🇦🇪🇷🇺]/g, ''); 
-      if (!line) return;
-      line = line.replace(/\(.*?\)/g, '').trim(); 
-      
-      const minPrice = isDubai ? 1000 : 10000;
-      const priceMatches = line.match(new RegExp(`\\b\\d{${isDubai ? 3 : 5},7}\\b`, 'g'));
-      const price = priceMatches ? Number(priceMatches[priceMatches.length - 1]) : null;
-      
-      const modelMatch = line.match(/(?:Iph\s*|iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*Pro|\s*про|\s*Макс|\s*Max|\s*Plus)?/i);
-      const storageMatch = line.match(/\b(64|128|256|512|1024|1TB|2TB|1 Tb)\b/i);
 
+    let currentModel = "";
+    let currentStorage = "";
+    
+    const lines = text.split('\n');
+    lines.forEach(rawLine => {
+      let line = rawLine.trim(); 
+      if (!line) return;
+
+      // Проверяем, есть ли цена в строке (от 4 до 7 цифр в конце)
+      const priceMatch = line.match(/(\d{4,7})$/);
+      
+      // Ищем модель (iPhone 18, 18 Pro, 18 Pro Max)
+      const modelMatch = line.match(/(?:iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*(?:Pro|про))?(?:\s*(?:Max|Макс))?/i);
+      
+      // Ищем память (256, 512, 1TB, 2TB)
+      const storageMatch = line.match(/\b(64|128|256|512|1024|1TB|2TB)\b/i);
+
+      // Ищем SIM (eSim или 1Sim+eSim)
+      let simType = "";
+      if (line.toLowerCase().includes('esim') || line.toLowerCase().includes('e-sim')) simType = "eSim";
+      if (line.toLowerCase().includes('1sim') || line.toLowerCase().includes('1-sim')) simType = "1Sim+eSim";
+
+      // Если нашли модель и память, обновляем текущую модель
       if (modelMatch && storageMatch) {
          let baseNum = modelMatch[1];
          let isMax = line.toLowerCase().includes('max') || line.toLowerCase().includes('макс');
          let isPro = line.toLowerCase().includes('pro') || line.toLowerCase().includes('про');
-         let isPlus = line.toLowerCase().includes('plus') || line.toLowerCase().includes('плюс');
+
          currentModel = `iPhone ${baseNum}`;
          if (isPro) currentModel += ' Pro';
          if (isMax) currentModel += ' Max';
-         if (isPlus) currentModel += ' Plus';
          
          let st = storageMatch[1].toUpperCase();
-         if (st === '1024' || st === '1 TB') st = '1TB';
-         if (st === '2048' || st === '2 TB') st = '2TB';
+         if (st === '1024') st = '1TB';
+         if (st === '2048') st = '2TB';
          if (st === '64') st = '64GB';
          if (st === '128') st = '128GB';
          if (st === '256') st = '256GB';
          if (st === '512') st = '512GB';
          currentStorage = st;
          
-         if (price && price >= minPrice) {
-            let colorStr = line.replace(modelMatch[0], '').replace(storageMatch[0], '').replace(String(price), '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
+         // Если в этой же строке есть цена (как у Ахмеда)
+         if (priceMatch) {
+            const price = Number(priceMatch[1]);
+            let colorStr = line.replace(priceMatch[0], '').replace(/\(.*?\)/g, '').replace(modelMatch[0], '').replace(storageMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
             if (!colorStr) colorStr = "Standard";
-            if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
-            if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
-            result.push({ key: `${currentModel} ${currentStorage} ${colorStr}`.trim(), price: price });
+            
+            let key = `${currentModel} ${currentStorage} ${colorStr} ${simType}`.trim();
+            result.push({ key: key, price: price });
          }
          return; 
       }
 
-      if (currentModel && currentStorage && price && price >= minPrice) {
-         let colorStr = line.replace(String(price), '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
+      // Если модель уже есть, но цена на новой строке (как у Дубая)
+      if (currentModel && currentStorage && priceMatch) {
+         const price = Number(priceMatch[1]);
+         let colorStr = line.replace(priceMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
+         
+         // Игнорируем мусор
          if (colorStr.toLowerCase().includes('гарант') || colorStr.toLowerCase().includes('адрес') || colorStr.toLowerCase().includes('номер') || colorStr.toLowerCase().includes('мест')) return;
+         
          if (!colorStr) colorStr = "Standard";
          if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
          if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
-         result.push({ key: `${currentModel} ${currentStorage} ${colorStr}`.trim(), price: price });
+         
+         let key = `${currentModel} ${currentStorage} ${colorStr} ${simType}`.trim();
+         result.push({ key: key, price: price });
       }
     });
     return result;
   }
 
-  // Сравнение и генерация витрины
   window.comparePrices = function() {
+    document.getElementById('results').innerHTML = '';
+
     const list1 = parseSupplierText(document.getElementById('supplier1').value, false);
     const list2 = parseSupplierText(document.getElementById('supplier2').value, false);
     const list3 = parseSupplierText(document.getElementById('supplier3').value, true);
@@ -209,7 +154,11 @@
     let dict4 = {}; list4.forEach(i => dict4[i.key] = i.price);
 
     let resultsHtml = '';
-    finalPosterItems = []; // Очищаем старый список
+
+    if (list1.length === 0) {
+        document.getElementById('results').innerHTML = '<div style="text-align:center; padding:20px; color:#f87171;">Не удалось распознать текст Ахмеда. Убедитесь, что есть цена в конце строки.</div>';
+        return;
+    }
 
     list1.forEach(item => {
       const key = item.key; 
@@ -218,20 +167,14 @@
       const price3 = dict3[key] || null; 
       const price4 = dict4[key] || null;
 
-      // Ищем минимальную цену
       let minPrice = Math.min(price1 || Infinity, price2 || Infinity, price3 || Infinity, price4 || Infinity);
       
-      let parts = key.split(' '); 
-      let color = parts.pop(); 
-      let storage = parts.pop(); 
-      let model = parts.join(' ');
-
-      // Сохраняем для витрины (берем минимальную цену)
-      finalPosterItems.push({ model: model, storage: storage, color: color, minPrice: minPrice });
-
+      // Форматируем название для вывода
+      let displayName = key.replace(' eSim', ' (eSim)').replace(' 1Sim+eSim', ' (1Sim+eSim)');
+      
       resultsHtml += `
         <div class="result-card">
-          <div class="result-title">${model} <span style="font-size:12px; color:#8b92a5">${storage} ${color}</span></div>
+          <div class="result-title">${displayName}</div>
           <div class="prices-grid">
             <div class="price-box ${price1 === minPrice ? 'bg-green' : 'bg-red'}">
               <span class="label">АХМЕД</span>
@@ -253,65 +196,7 @@
         </div>`;
     });
 
-    if(!resultsHtml) resultsHtml = '<div style="text-align:center; padding:20px; color:#aaa;">Цены не распознаны. Проверьте текст Ахмеда.</div>';
     document.getElementById('results').innerHTML = resultsHtml;
-    
-    // Автоматически генерируем витрину после сравнения
-    generatePosterFromText();
-  }
-
-  // Генерация витрины с наценкой
-  window.generatePosterFromText = function() {
-    if(finalPosterItems.length === 0) return alert('Сначала вставьте текст и нажмите "Сравнить цены"');
-    
-    const markup = Number(document.getElementById('markupInput').value) || 0;
-    let html = '';
-    
-    finalPosterItems.forEach(item => {
-      // К минимальной цене прибавляем наценку
-      const sellPrice = item.minPrice + markup;
-      
-      html += `
-      <div class="poster-item">
-        <div class="p-info">
-          <div class="p-model">${item.model}</div>
-          <div class="p-desc">${item.storage} • ${item.color}</div>
-        </div>
-        <div class="p-price-wrap">
-          <div class="p-price">${sellPrice.toLocaleString('ru-RU')} ₽</div>
-        </div>
-      </div>`;
-    });
-    
-    document.getElementById('posterList').innerHTML = html;
-  }
-
-  window.downloadPosterImage = function() {
-    const posterElement = document.getElementById('posterContainer');
-    html2canvas(posterElement, { scale: 2, backgroundColor: '#0f111a', useCORS: true }).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) { 
-         const win = window.open(); 
-         win.document.write('<img src="' + imgData + '" style="width:100%;" />'); 
-      } else { 
-         const link = document.createElement('a'); link.download = `vizitka.png`; link.href = imgData; link.click(); 
-      }
-    });
-  }
-
-  window.copyPosterText = function() {
-    if(finalPosterItems.length === 0) return alert('Сначала сделайте сравнение!');
-    const markup = Number(document.getElementById('markupInput').value) || 0;
-    
-    let text = "🔥 *FREE ZONE (В наличии)*\nПРЕДЗАКАЗ ДО 17:00\n\n";
-    
-    finalPosterItems.forEach(item => {
-      const sellPrice = item.minPrice + markup;
-      text += `▪️ ${item.model} ${item.storage} ${item.color}\n   Цена: *${sellPrice.toLocaleString('ru-RU')} ₽*\n\n`;
-    });
-    
-    text += "💳 Доступна рассрочка\n🔥 Предзаказ ВЫГОДНЕЕ (аванс 3000 ₽)\n\n📞 Заказ: +7 988 783-66-77";
-    navigator.clipboard.writeText(text).then(() => { alert("Текст скопирован! Вставьте в WhatsApp."); });
   }
 </script>
 </body>
