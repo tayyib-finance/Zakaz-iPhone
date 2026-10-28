@@ -9,17 +9,17 @@
   body { background-color: #0f0f13; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; padding-bottom: 80px;}
   .container { max-width: 500px; margin: 0 auto; }
   
-  /* Переключатель вкладок (Прайс / Сравнение) */
+  /* Переключатель вкладок */
   .main-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
   .main-tab { flex: 1; padding: 12px; background: #1a1a20; color: #888; border: 1px solid #333; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
   .main-tab.active { background: #007aff; color: white; border-color: #007aff; }
 
-  /* Общие стили для блоков */
+  /* Общие стили */
   .panel { background: #1a1a20; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-  textarea { width: 100%; height: 100px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
+  textarea { width: 100%; height: 120px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
   
   .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
-  .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; display: inline-block;}
+  .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
   .btn-green { background: #00ff88; color: #000; }
   .btn-red { background: #e6194b; color: white; }
   .btn-blue { background: #007aff; color: white; }
@@ -27,22 +27,20 @@
   
   /* Каталог */
   .header-text { color: #e0a800; font-size: 14px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; text-align: center;}
-  
   .card { background: #1a1a20; border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; border: 1px solid #2a2a35; }
   .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;}
   .info { flex: 1; padding-right: 10px; }
   .title { font-weight: bold; font-size: 15px; margin-bottom: 2px; }
   .desc { color: #888; font-size: 12px; }
   .price { font-size: 18px; font-weight: bold; color: #fff; white-space: nowrap;}
-  
   .manual-markup { display: flex; align-items: center; gap: 5px; margin-top: 8px; background: #0f0f13; padding: 5px 10px; border-radius: 6px; border: 1px solid #333;}
   .manual-markup span { font-size: 12px; color: #aaa; }
   .manual-markup input { width: 60px; background: transparent; border: none; color: #00ff88; font-size: 14px; font-weight: bold; outline: none; text-align: center;}
   
   /* Сравнение */
   .compare-block { background: #1a1a20; padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
-  .compare-block textarea { height: 80px; margin-bottom: 5px;}
-  .compare-block .btn-clear { padding: 8px; font-size: 12px; width: 100%; background: #333; color: #aaa; border-radius: 6px;}
+  .compare-block textarea { height: 100px; margin-bottom: 5px;}
+  .compare-block .btn-clear { padding: 8px; font-size: 12px; width: 100%; background: #333; color: #aaa; border-radius: 6px; border: none;}
   
   .compare-row { background: #0f0f13; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #333; }
   .compare-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #e0a800;}
@@ -63,7 +61,6 @@
 
 <div class="container">
   
-  <!-- Главное меню -->
   <div class="main-tabs">
     <div class="main-tab active" id="tab-price" onclick="switchMainTab('price')">📱 Прайс для клиента</div>
     <div class="main-tab" id="tab-compare" onclick="switchMainTab('compare')">📊 Сравнение поставщиков</div>
@@ -72,7 +69,7 @@
   <!-- ВКЛАДКА 1: ПРАЙС -->
   <div id="view-price" style="display: block;">
     <div class="panel" id="admin-controls">
-      <textarea id="input-text" placeholder="Вставьте готовый список для клиента..."></textarea>
+      <textarea id="input-text" placeholder="Вставьте готовый список для клиента (Например: 18 Pro 256 Black - 104500)"></textarea>
       <div class="btn-group">
         <button class="btn btn-green" onclick="processList()">Рассчитать</button>
         <button class="btn btn-grey" onclick="clearPriceList()">Очистить</button>
@@ -84,14 +81,8 @@
     </div>
 
     <div id="capture-area">
-      <div class="header-text">
-        ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ
-      </div>
-
-      <div id="result-list">
-        <div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div>
-      </div>
-
+      <div class="header-text">ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ</div>
+      <div id="result-list"><div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div></div>
       <div class="footer">
         <h4>💳 Доступна рассрочка</h4>
         <p>Без банков и переплат</p>
@@ -106,30 +97,22 @@
 
   <!-- ВКЛАДКА 2: СРАВНЕНИЕ -->
   <div id="view-compare" style="display: none;">
-    
-    <!-- Блок Поставщик 1 -->
     <div class="compare-block">
       <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 1</div>
       <textarea id="sup1" placeholder="Вставьте список 1..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(1)">Очистить 1</button>
     </div>
-
-    <!-- Блок Поставщик 2 -->
     <div class="compare-block">
       <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 2</div>
       <textarea id="sup2" placeholder="Вставьте список 2..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(2)">Очистить 2</button>
     </div>
-
-    <!-- Блок Поставщик 3 -->
     <div class="compare-block">
       <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 3</div>
       <textarea id="sup3" placeholder="Вставьте список 3..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(3)">Очистить 3</button>
     </div>
-
     <button class="btn btn-green" onclick="runComparison()" style="margin-bottom: 20px;">Сравнить цены</button>
-    
     <div id="compare-results"></div>
   </div>
 
@@ -138,6 +121,21 @@
 <script>
   let currentPriceData = []; 
   let compareData = { 1: [], 2: [], 3: [] };
+
+  // Универсальная функция поиска цены (понимает тире, дефисы и т.д.)
+  function extractPriceAndName(line) {
+    // Ищем последнее число в строке (цена)
+    const priceMatch = line.match(/(\d+)(?!.*\d)/); 
+    if (!priceMatch) return null;
+
+    const price = parseInt(priceMatch[1]);
+    // Отрезаем цену от названия
+    let name = line.substring(0, priceMatch.index).trim();
+    // Убираем лишние тире и пробелы в конце названия
+    name = name.replace(/[-–—\s]+$/, '').trim(); 
+
+    return { name: name, price: price };
+  }
 
   function switchMainTab(tab) {
     document.getElementById('tab-price').classList.toggle('active', tab === 'price');
@@ -162,10 +160,11 @@
     
     lines.forEach(line => {
       line = line.trim();
-      if (!line || line.includes('ПРЕДЗАКАЗ') || line.includes('ВЫДАЧА НА')) return;
-      const priceMatch = line.match(/^(.*?)\s+(\d+)$/);
-      if (priceMatch) {
-        currentPriceData.push({ name: priceMatch[1].trim(), originalPrice: parseInt(priceMatch[2]), manualMarkup: 0 });
+      if (!line || line.toLowerCase().includes('предзаказ') || line.toLowerCase().includes('выдача на')) return;
+      
+      const parsed = extractPriceAndName(line);
+      if (parsed) {
+        currentPriceData.push({ name: parsed.name, originalPrice: parsed.price, manualMarkup: 0 });
       }
     });
     renderPriceList();
@@ -180,17 +179,12 @@
 
     currentPriceData.forEach((item, index) => {
         const finalPrice = item.originalPrice + item.manualMarkup;
-        let title = item.name;
-        let desc = "";
-        const specMatch = item.name.match(/(.*?)\s+(\d+\/\d+.*)/);
-        if (specMatch) { title = specMatch[1]; desc = specMatch[2]; }
-
+        
         html += `
           <div class="card">
             <div class="card-top">
               <div class="info">
-                <div class="title">${title}</div>
-                <div class="desc">${desc}</div>
+                <div class="title">${item.name}</div>
               </div>
               <div class="price">${formatPrice(finalPrice)} ₽</div>
             </div>
@@ -225,7 +219,7 @@
     if (currentPriceData.length === 0) return alert("Нет данных");
     const formatPrice = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     let message = "ПРЕДЗАКАЗ ДО 17:00\nВЫДАЧА НА СУББОТУ\n\n";
-    currentPriceData.forEach(item => { message += `${item.name} ${formatPrice(item.originalPrice + item.manualMarkup)}\n`; });
+    currentPriceData.forEach(item => { message += `${item.name} — ${formatPrice(item.originalPrice + item.manualMarkup)}\n`; });
     message += "\n💳 Доступна рассрочка\n🔥 Предзаказ ВЫГОДНЕЕ!\n\nЗаказ: +7 988 783-66-77";
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   }
@@ -234,7 +228,7 @@
   function clearSupplier(num) {
     document.getElementById('sup' + num).value = '';
     compareData[num] = [];
-    document.getElementById('compare-results').innerHTML = ''; // Очищаем результаты
+    document.getElementById('compare-results').innerHTML = '';
   }
 
   function parseSupplierText(text) {
@@ -242,10 +236,8 @@
     text.split('\n').forEach(line => {
       line = line.trim();
       if (!line) return;
-      const priceMatch = line.match(/^(.*?)\s+(\d+)$/);
-      if (priceMatch) {
-        parsed.push({ name: priceMatch[1].trim(), price: parseInt(priceMatch[2]) });
-      }
+      const data = extractPriceAndName(line);
+      if (data) parsed.push(data);
     });
     return parsed;
   }
@@ -255,21 +247,43 @@
     compareData[2] = parseSupplierText(document.getElementById('sup2').value);
     compareData[3] = parseSupplierText(document.getElementById('sup3').value);
 
-    // Функция очистки названия (убираем флаги и цвета, оставляем модель + память)
+    // УМНАЯ ОЧИСТКА: убираем флаги, цвета и лишние слова
     function getBaseName(name) {
-        let clean = name.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
-        const specMatch = clean.match(/(.*?)\s+(\d+\/\d+)/);
-        if (specMatch) return (specMatch[1] + ' ' + specMatch[2]).toLowerCase().replace(/\s+/g, ' ');
-        return clean.toLowerCase().replace(/\s+/g, ' ');
+        // Приводим к нижнему регистру
+        let clean = name.toLowerCase();
+        
+        // Убираем эмодзи флагов (если есть)
+        clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
+        
+        // Список цветов, которые нужно игнорировать при сравнении
+        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'burgunby', 'glacier', 'glacir', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream'];
+        colors.forEach(color => {
+            clean = clean.replace(new RegExp(color, 'g'), '');
+        });
+
+        // Оставляем только модель и характеристики (цифры, слэши, буквы памяти)
+        // Удаляем все символы кроме букв, цифр и пробелов
+        clean = clean.replace(/[^a-zа-я0-9\s]/g, ' ');
+        
+        // Убираем лишние пробелы
+        clean = clean.replace(/\s+/g, ' ').trim();
+
+        return clean;
     }
 
     let allProducts = {};
     for (let i = 1; i <= 3; i++) {
         compareData[i].forEach(item => {
             const key = getBaseName(item.name);
-            if (!allProducts[key]) allProducts[key] = { displayName: getBaseName(item.name).toUpperCase(), prices: {1: '-', 2: '-', 3: '-'} };
+            // Если вдруг ключ получился пустым (например, в строке был только цвет), пропускаем
+            if (!key) return; 
+
+            if (!allProducts[key]) {
+                // Для красивого отображения берем оригинальное название первой встретившейся модели
+                allProducts[key] = { displayName: item.name, prices: {1: '-', 2: '-', 3: '-'} };
+            }
             
-            // Если есть несколько цветов, берем самый дешевый
+            // Если у поставщика несколько цветов, берем самый дешевый
             if (allProducts[key].prices[i] === '-' || item.price < allProducts[key].prices[i]) {
                 allProducts[key].prices[i] = item.price;
             }
