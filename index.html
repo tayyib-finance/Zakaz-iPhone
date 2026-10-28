@@ -22,6 +22,7 @@
   
   .supplier-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
   .supplier-title { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .supplier-title.main { color: #a3e635; font-size: 15px; }
   .supplier-box textarea { width: 100%; height: 120px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none; line-height: 1.5;}
   
   .compare-btn { background: #a3e635; color: #000; font-size: 16px; padding: 15px; border-radius: 12px; border: none; font-weight: 800; width: 100%; margin: 20px 0; cursor: pointer; }
@@ -48,12 +49,12 @@
   </div>
 
   <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 1 (Ахмед)</div>
-    <textarea id="supplier1" placeholder="Вставьте прайс..."></textarea>
+    <div class="supplier-title main">⭐ Поставщик 1 (Главный - Ахмед)</div>
+    <textarea id="supplier1" placeholder="Вставьте прайс Ахмеда..."></textarea>
   </div>
 
   <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 2 (Абдул)</div>
+    <div class="supplier-title">🏪 Поставщик 2</div>
     <textarea id="supplier2" placeholder="Вставьте прайс..."></textarea>
   </div>
 
@@ -63,7 +64,7 @@
   </div>
 
   <div class="supplier-box" style="border-color: #f5c76a;">
-    <div class="supplier-title">🇦🇪 Поставщик 4 (Австралия)</div>
+    <div class="supplier-title">🇦🇪 Поставщик 4 (Австралия/Дубай)</div>
     <textarea id="supplier4" placeholder="Вставьте прайс..."></textarea>
   </div>
 
@@ -83,9 +84,9 @@
     document.getElementById('page-' + tab).classList.add('active');
   }
 
-  // Ультра-парсер для любых форматов
-  function parseSupplierText(text) {
-    let result = {}; 
+  // Парсер с сохранением порядка
+  function parseSupplierText(text, isDubai = false) {
+    let result = []; 
     if(!text) return result;
 
     let currentModel = "";
@@ -93,18 +94,17 @@
     
     const lines = text.split('\n');
     lines.forEach(rawLine => {
-      // Очистка от лишних символов
       let line = rawLine.trim().replace(/[🇦🇪🇦🇺🇦🇪🇷🇺]/g, ''); 
       if (!line) return;
       
       line = line.replace(/\(.*?\)/g, '').trim(); // Убираем скобки
       
-      // Ищем цену (число от 3 до 7 знаков)
-      const priceMatch = line.match(/\b\d{3,7}\b/);
+      // Ищем цену. Для Дубая от 1000, для остальных от 10000 (чтобы не путать с 256, 512)
+      const minPrice = isDubai ? 1000 : 10000;
+      const priceMatches = line.match(new RegExp(`\\b\\d{${isDubai ? 3 : 5},7}\\b`, 'g'));
+      const price = priceMatches ? Number(priceMatches[priceMatches.length - 1]) : null;
       
-      // Ищем модель (англ и рус)
       const modelMatch = line.match(/(?:Iph\s*|iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*Pro|\s*про|\s*Макс|\s*Max|\s*Plus)?/i);
-      // Ищем память
       const storageMatch = line.match(/\b(64|128|256|512|1024|1TB|2TB|1 Tb)\b/i);
 
       if (modelMatch && storageMatch) {
@@ -127,67 +127,80 @@
          if (st === '512') st = '512GB';
          currentStorage = st;
          
-         if (priceMatch) {
-            const price = Number(priceMatch[0]);
-            let colorStr = line.replace(modelMatch[0], '').replace(storageMatch[0], '').replace(priceMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
+         if (price && price >= minPrice) {
+            let colorStr = line.replace(modelMatch[0], '').replace(storageMatch[0], '').replace(String(price), '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
             if (!colorStr) colorStr = "Standard";
-            // Нормализация цветов
             if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
             if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
             let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
-            result[key] = price;
+            result.push({ key: key, price: price });
          }
          return; 
       }
 
-      // Если модель уже есть, ищем цвет и цену
-      if (currentModel && currentStorage && priceMatch) {
-         const price = Number(priceMatch[0]);
-         let colorStr = line.replace(priceMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
+      if (currentModel && currentStorage && price && price >= minPrice) {
+         let colorStr = line.replace(String(price), '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
          
-         // Игнорируем мусор
          if (colorStr.toLowerCase().includes('гарант') || colorStr.toLowerCase().includes('адрес') || colorStr.toLowerCase().includes('номер') || colorStr.toLowerCase().includes('мест')) return;
+         if (colorStr.match(/[A-Z]{3}\d+/) || colorStr.toLowerCase().includes('loop')) return; // Игнорируем часы
          
          if (!colorStr) colorStr = "Standard";
          if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
          if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
          
          let key = `${currentModel} ${currentStorage} ${colorStr}`.trim();
-         result[key] = price;
+         result.push({ key: key, price: price });
       }
     });
     return result;
   }
 
   function comparePrices() {
-    const t1 = document.getElementById('supplier1').value;
-    const t2 = document.getElementById('supplier2').value;
-    const t3 = document.getElementById('supplier3').value;
-    const t4 = document.getElementById('supplier4').value;
+    // Парсим всех
+    const list1 = parseSupplierText(document.getElementById('supplier1').value, false);
+    const list2 = parseSupplierText(document.getElementById('supplier2').value, false);
+    const list3 = parseSupplierText(document.getElementById('supplier3').value, true);
+    const list4 = parseSupplierText(document.getElementById('supplier4').value, true);
 
-    const p1 = parseSupplierText(t1);
-    const p2 = parseSupplierText(t2);
-    const p3 = parseSupplierText(t3);
-    const p4 = parseSupplierText(t4);
+    // Превращаем в словари для быстрого поиска
+    let dict1 = {}; list1.forEach(i => dict1[i.key] = i.price);
+    let dict2 = {}; list2.forEach(i => dict2[i.key] = i.price);
+    let dict3 = {}; list3.forEach(i => dict3[i.key] = i.price);
+    let dict4 = {}; list4.forEach(i => dict4[i.key] = i.price);
 
+    // Собираем уникальные ключи
     let allKeys = new Set([
-      ...Object.keys(p1), ...Object.keys(p2), ...Object.keys(p3), ...Object.keys(p4)
+      ...list1.map(i => i.key), ...list2.map(i => i.key), ...list3.map(i => i.key), ...list4.map(i => i.key)
     ]);
 
+    // СОРТИРОВКА: Сначала те, что есть у Поставщика 1 (в том порядке, как он написал), потом остальные
+    let orderedKeys = list1.map(i => i.key);
+    
+    // Добавляем те, которых нет у Ахмеда, но есть у других
+    allKeys.forEach(k => {
+      if (!orderedKeys.includes(k)) orderedKeys.push(k);
+    });
+    
+    // Убираем дубликаты ключей из orderedKeys
+    orderedKeys = [...new Set(orderedKeys)];
+
     let resultsHtml = '';
-    let sortedKeys = Array.from(allKeys).sort();
 
-    sortedKeys.forEach(key => {
-      const price1 = p1[key] || null;
-      const price2 = p2[key] || null;
-      const price3 = p3[key] || null;
-      const price4 = p4[key] || null;
+    orderedKeys.forEach(key => {
+      const price1 = dict1[key] || null;
+      const price2 = dict2[key] || null;
+      const price3 = dict3[key] || null;
+      const price4 = dict4[key] || null;
 
+      // Находим минимальную цену (только среди тех, где она есть)
       let minPrice = Infinity;
       if (price1) minPrice = Math.min(minPrice, price1);
       if (price2) minPrice = Math.min(minPrice, price2);
       if (price3) minPrice = Math.min(minPrice, price3);
       if (price4) minPrice = Math.min(minPrice, price4);
+      
+      // Если минимальную не нашли (все null), пропускаем
+      if (minPrice === Infinity) return;
 
       let parts = key.split(' ');
       let color = parts.pop();
@@ -199,7 +212,7 @@
           <div class="result-title">${model} <span style="font-size:12px; color:#8b92a5">${storage} ${color}</span></div>
           <div class="prices-grid">
             <div class="price-box ${price1 === minPrice ? 'bg-green' : (price1 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ПОСТ 1</span>
+              <span class="label">АХМЕД</span>
               <span class="val">${price1 ? price1.toLocaleString('ru-RU') + ' ₽' : '-'}</span>
             </div>
             <div class="price-box ${price2 === minPrice ? 'bg-green' : (price2 ? 'bg-red' : 'bg-gray')}">
@@ -212,7 +225,7 @@
             </div>
             <div class="price-box ${price4 === minPrice ? 'bg-green' : (price4 ? 'bg-red' : 'bg-gray')}">
               <span class="label">ПОСТ 4</span>
-              <span class="val">${price4 ? price4.toLocaleString('ru-RU') + ' AUD' : '-'}</span>
+              <span class="val">${price4 ? price4.toLocaleString('ru-RU') + ' AED' : '-'}</span>
             </div>
           </div>
         </div>
@@ -220,7 +233,7 @@
     });
 
     if(!resultsHtml) {
-        resultsHtml = '<div class="loading">Цены не распознаны.</div>';
+        resultsHtml = '<div class="loading">Цены не распознаны. Проверьте формат.</div>';
     }
 
     document.getElementById('results').innerHTML = resultsHtml;
