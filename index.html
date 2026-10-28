@@ -117,7 +117,7 @@
 <script>
   let parsedItems = [];
 
-  // ГИБРИДНЫЙ ПАРСЕР (понимает и одну строку, и блоки)
+  // ГИБРИДНЫЙ ПАРСЕР (понимает всё)
   function parseAhmedText(text) {
     let result = [];
     let currentModel = "";
@@ -130,26 +130,27 @@
       let line = rawLine.trim();
       if (!line) return;
 
-      // Извлекаем SIM из оригинальной строки
+      // 1. Определяем тип SIM
       let simStr = "";
-      if (rawLine.toLowerCase().includes('1sim') || rawLine.toLowerCase().includes('1-sim')) simStr = "1Sim+eSim";
-      else if (rawLine.toLowerCase().includes('esim')) simStr = "eSim";
+      if (line.toLowerCase().includes('1sim') || line.toLowerCase().includes('1-sim')) simStr = "1Sim+eSim";
+      else if (line.toLowerCase().includes('esim')) simStr = "eSim";
 
-      // Очищаем строку от скобок и тире для поиска цены и модели
-      let cleanLine = line.replace(/\(.*?\)/g, '').replace(/[-—]/g, ' ').trim();
-
-      // Ищем цену (от 4 до 7 цифр)
-      const priceMatch = cleanLine.match(/\b(\d{4,7})\b/);
+      // 2. Ищем цену (всегда от 4 до 7 цифр)
+      const priceMatch = line.match(/\b(\d{4,7})\b/);
       const price = priceMatch ? Number(priceMatch[1]) : null;
 
-      // Ищем модель и память
-      const modelMatch = cleanLine.match(/(?:iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*(?:Pro|про))?(?:\s*(?:Max|Макс))?/i);
-      const storageMatch = cleanLine.match(/\b(64|128|256|512|1024|1TB|2TB|1 Tb)\b/i);
+      // 3. Очищаем строку от цены и мусора для поиска модели
+      let textForModel = line.replace(priceMatch ? priceMatch[0] : '', '').replace(/\(.*?\)/g, '').replace(/[-—]/g, ' ').trim();
 
+      // 4. Ищем модель и память
+      const modelMatch = textForModel.match(/(?:iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*(?:Pro|про))?(?:\s*(?:Max|Макс))?/i);
+      const storageMatch = textForModel.match(/\b(64|128|256|512|1024|1TB|2TB|1 Tb)\b/i);
+
+      // Если нашли модель и память — обновляем текущие
       if (modelMatch && storageMatch) {
          let baseNum = modelMatch[1];
-         let isMax = cleanLine.toLowerCase().includes('max') || cleanLine.toLowerCase().includes('макс');
-         let isPro = cleanLine.toLowerCase().includes('pro') || cleanLine.toLowerCase().includes('про');
+         let isMax = textForModel.toLowerCase().includes('max') || textForModel.toLowerCase().includes('макс');
+         let isPro = textForModel.toLowerCase().includes('pro') || textForModel.toLowerCase().includes('про');
 
          currentModel = `iPhone ${baseNum}`;
          if (isPro) currentModel += ' Pro';
@@ -164,76 +165,81 @@
          if (st === '512') st = '512GB';
          currentStorage = st;
          if (simStr) currentSim = simStr;
-
-         // Если в этой же строке есть цена (Формат 1)
-         if (price) {
-            let colorStr = cleanLine.replace(modelMatch[0], '').replace(storageMatch[0], '').replace(String(price), '').replace(/\b(eSim|1Sim)\b/gi, '').trim();
-            if (!colorStr) colorStr = "Standard";
-            result.push({ model: currentModel, storage: currentStorage, color: colorStr, sim: currentSim, buyPrice: price });
-         }
-         return; 
       }
 
-      // Если модель уже есть, а цена на новой строке (Формат 2)
-      if (currentModel && currentStorage && price) {
-         let colorStr = cleanLine.replace(String(price), '').replace(/\b(eSim|1Sim)\b/gi, '').trim();
-         
-         // Игнорируем мусор
-         if (colorStr.toLowerCase().includes('гарант') || colorStr.toLowerCase().includes('адрес') || colorStr.toLowerCase().includes('номер') || colorStr.toLowerCase().includes('мест')) return;
-         
+      // 5. Если есть цена — сохраняем позицию
+      if (price && currentModel) {
+         // Вырезаем всё лишнее, чтобы остался только цвет
+         let colorStr = textForModel
+            .replace(modelMatch ? modelMatch[0] : '', '')
+            .replace(storageMatch ? storageMatch[0] : '', '')
+            .replace(/18|pro|max|про|макс|iphone/gi, '')
+            .trim();
+            
          if (!colorStr) colorStr = "Standard";
          if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
          if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
-         
-         result.push({ model: currentModel, storage: currentStorage, color: colorStr, sim: currentSim, buyPrice: price });
+
+         result.push({
+           model: currentModel,
+           storage: currentStorage,
+           color: colorStr,
+           sim: currentSim,
+           buyPrice: price
+         });
       }
     });
     return result;
   }
 
   window.calculatePrices = function() {
-    const text = document.getElementById('supplier1').value;
-    const markup = Number(document.getElementById('markupInput').value) || 0;
-    
-    parsedItems = parseAhmedText(text);
-
-    if (parsedItems.length === 0) {
-        return alert('Не удалось распознать текст. Убедитесь, что есть цены (например: 119000).');
-    }
-
-    let html = '';
-    
-    parsedItems.forEach((item, index) => {
-      const finalPrice = item.buyPrice + markup;
+    try {
+      const text = document.getElementById('supplier1').value;
+      const markup = Number(document.getElementById('markupInput').value) || 0;
       
-      html += `
-        <div class="calc-row">
-          <div class="calc-name">
-            ${item.model} ${item.storage}
-            <span>${item.color} ${item.sim}</span>
-          </div>
-          <div class="calc-buy">${item.buyPrice.toLocaleString('ru-RU')} ₽</div>
-          <div>
-            <input type="number" class="calc-sell" id="sell_${index}" value="${finalPrice}" oninput="updateTotal()">
-          </div>
-        </div>
-      `;
-    });
+      parsedItems = parseAhmedText(text);
+      console.log("Распознано позиций:", parsedItems.length);
 
-    document.getElementById('calcList').innerHTML = html;
-    document.getElementById('totalBox').style.display = 'flex';
-    document.getElementById('actionButtons').style.display = 'grid';
-    document.getElementById('posterContainer').style.display = 'block';
-    
-    updateTotal();
-    generatePosterPreview();
+      if (parsedItems.length === 0) {
+          return alert('Не удалось распознать текст. Проверьте, что цены написаны цифрами (например: 119000).');
+      }
+
+      let html = '';
+      parsedItems.forEach((item, index) => {
+        const finalPrice = item.buyPrice + markup;
+        html += `
+          <div class="calc-row">
+            <div class="calc-name">
+              ${item.model} ${item.storage}
+              <span>${item.color} ${item.sim}</span>
+            </div>
+            <div class="calc-buy">${item.buyPrice.toLocaleString('ru-RU')} ₽</div>
+            <div>
+              <input type="number" class="calc-sell" id="sell_${index}" value="${finalPrice}" oninput="updateTotal()">
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('calcList').innerHTML = html;
+      document.getElementById('totalBox').style.display = 'flex';
+      document.getElementById('actionButtons').style.display = 'grid';
+      document.getElementById('posterContainer').style.display = 'block';
+      
+      updateTotal();
+      generatePosterPreview();
+    } catch (e) {
+      alert("Ошибка: " + e.message);
+    }
   }
 
   window.updateTotal = function() {
     let total = 0;
     parsedItems.forEach((item, index) => {
-      const val = Number(document.getElementById(`sell_${index}`).value) || 0;
-      total += val;
+      const el = document.getElementById(`sell_${index}`);
+      if (el) {
+        total += Number(el.value) || 0;
+      }
     });
     document.getElementById('totalSum').textContent = total.toLocaleString('ru-RU') + ' ₽';
     generatePosterPreview(); 
@@ -242,7 +248,8 @@
   window.generatePosterPreview = function() {
     let html = '';
     parsedItems.forEach((item, index) => {
-      const finalPrice = Number(document.getElementById(`sell_${index}`).value) || 0;
+      const el = document.getElementById(`sell_${index}`);
+      const finalPrice = el ? (Number(el.value) || 0) : 0;
       const desc = [item.storage, item.sim, item.color].filter(Boolean).join(' • ');
       
       html += `
@@ -262,10 +269,10 @@
     html2canvas(posterElement, { scale: 2, backgroundColor: '#0f111a', useCORS: true }).then(canvas => {
       const imgData = canvas.toDataURL('image/png');
       if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) { 
-         constviz win = window.open(); 
-         win.ditocument.write('<img src="ka' + imgData + '" style.png`="width:100%;" />'); 
-;      } else { 
-         const link = document.createElement('a'); link.download = ` link.href = imgData; link.click(); 
+         const win = window.open(); 
+         win.document.write('<img src="' + imgData + '" style="width:100%;" />'); 
+      } else { 
+         const link = document.createElement('a'); link.download = `vizitka.png`; link.href = imgData; link.click(); 
       }
     });
   }
@@ -274,7 +281,8 @@
     let text = "🔥 *FREE ZONE (В наличии)*\nПРЕДЗАКАЗ ДО 17:00\n\n";
     
     parsedItems.forEach((item, index) => {
-      const finalPrice = Number(document.getElementById(`sell_${index}`).value) || 0;
+      const el = document.getElementById(`sell_${index}`);
+      const finalPrice = el ? (Number(el.value) || 0) : 0;
       const desc = [item.storage, item.sim, item.color].filter(Boolean).join(', ');
       text += `▪️ ${item.model} (${desc})\n   Цена: *${finalPrice.toLocaleString('ru-RU')} ₽*\n\n`;
     });
