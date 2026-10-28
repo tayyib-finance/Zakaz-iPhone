@@ -36,20 +36,18 @@
   .rate-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: #2a2a35; padding: 10px; border-radius: 8px;}
   .rate-input input { width: 80px; padding: 8px; border-radius: 5px; border: none; font-size: 16px; font-weight: bold; text-align: center;}
   
-  /* СРАВНЕНИЕ */
   .compare-row { background: #0f0f13; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #333; }
   .compare-title { font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #e0a800; line-height: 1.3;}
-  .compare-tags { display: flex; gap: 5px; margin-bottom: 10px; font-size: 10px;}
+  .compare-tags { display: flex; gap: 5px; margin-bottom: 10px; font-size: 10px; flex-wrap: wrap;}
   .tag { background: #333; padding: 2px 6px; border-radius: 4px; color: #ccc;}
   .tag.blue { background: #007aff; color: white; }
   .tag.green { background: #00ff88; color: #000; }
+  .tag.color { background: #555; }
 
-  /* Жесткая сетка в 4 колонки */
   .compare-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
   .compare-item { text-align: center; padding: 8px 2px; border-radius: 5px; background: #1a1a20; border: 1px solid #333; font-size: 11px; font-weight: bold;}
   .compare-label { font-size: 9px; color: #888; display: block; margin-bottom: 4px; font-weight: normal;}
   
-  /* Цвета цен */
   .price-best { background: rgba(0, 255, 136, 0.15); border-color: #00ff88; color: #00ff88; }
   .price-worst { background: rgba(230, 25, 75, 0.15); border-color: #e6194b; color: #e6194b; }
 
@@ -146,29 +144,58 @@
     return { name: name, price: price };
   }
 
+  // УМНЫЙ ПАРСЕР ДЛЯ ДУБАЯ
   function parseDubaiText(text) {
     let parsed = [];
     let currentModel = "";
+    
     text.split('\n').forEach(line => {
       line = line.trim();
       if (!line) return;
+      
+      if (line.toLowerCase().match(/(watch|band|loop|strap|case)/)) {
+          currentModel = ""; 
+          return; 
+      }
+
+      // Если в строке есть память (GB/TB) и нет цены в конце - это заголовок
       if (line.match(/(GB|TB)/i) && !line.match(/\s+\d+$/)) {
         currentModel = line;
         return;
       }
+
       const data = extractPriceAndName(line);
-      if (data && currentModel) parsed.push({ name: `${currentModel} ${data.name}`, price: data.price });
+      if (data && currentModel) {
+        parsed.push({ name: `${currentModel} ${data.name}`, price: data.price });
+      }
     });
     return parsed;
   }
 
+  // УМНЫЙ ПАРСЕР ДЛЯ 1, 2, 3 (понимает, если eSIM написано отдельно)
   function parseSupplierText(text) {
     let parsed = [];
+    let globalSimType = "";
+
     text.split('\n').forEach(line => {
       line = line.trim();
       if (!line) return;
+
+      // Если строка без цены и содержит "esim" - запоминаем, что дальше идут eSIM телефоны
+      if (!line.match(/\d+$/) && line.toLowerCase().includes('esim')) {
+          globalSimType = "ESIM";
+          return;
+      }
+
       const data = extractPriceAndName(line);
-      if (data) parsed.push(data);
+      if (data) {
+        // Если был глобальный заголовок eSIM, приклеиваем его к названию
+        let fullName = data.name;
+        if (globalSimType && !fullName.toLowerCase().includes('sim')) {
+            fullName += ` (${globalSimType})`;
+        }
+        parsed.push({ name: fullName, price: data.price });
+      }
     });
     return parsed;
   }
@@ -265,41 +292,53 @@
 
     const usdRate = parseFloat(document.getElementById('usd-rate').value) || 85;
 
+    // МАКСИМАЛЬНО ГИБКАЯ ФУНКЦИЯ АНАЛИЗА
     function analyzeProductName(name) {
         let clean = name.toLowerCase();
+        
+        // 1. Убираем русские буквы
         const ruToEn = { 'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'e', 'ж':'zh', 'з':'z', 'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o', 'п':'p', 'р':'r', 'с':'s', 'т':'t', 'у':'u', 'ф':'f', 'х':'h', 'ц':'ts', 'ч':'ch', 'ш':'sh', 'щ':'sch', 'ъ':'', 'ы':'y', 'ь':'', 'э':'e', 'ю':'yu', 'я':'ya' };
         clean = clean.replace(/[а-яё]/g, char => ruToEn[char] || char);
-        clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
-        clean = clean.replace(/[^a-z0-9\s]/g, ' ');
 
+        // 2. Определяем ПАМЯТЬ (256, 512, 1TB и т.д.)
         let memory = '';
-        const memMatch = clean.match(/\b(64|128|256|512|1tb|2tb)\b/i);
+        const memMatch = clean.match(/\b(64|128|256|512|1024|1tb|2tb)\b/i);
         if (memMatch) {
             memory = memMatch[1].toUpperCase();
-            clean = clean.replace(memMatch[0], '');
+            if (memory === '1024') memory = '1TB';
+            // Удаляем память из строки, чтобы она не мешала искать модель
+            clean = clean.replace(memMatch[0], ''); 
         }
 
+        // 3. Определяем SIM (eSim или физическая)
         let simType = 'STANDARD';
         if (clean.includes('esim') || clean.includes('e sim')) {
-            if (clean.includes('sim') || clean.includes('1sim') || clean.includes('2sim') || clean.includes('+')) simType = 'SIM+ESIM';
-            else simType = 'ESIM';
+             simType = 'ESIM';
         } else if (clean.includes('sim') || clean.includes('physical') || clean.includes('физ')) {
              simType = 'SIM+ESIM';
         }
-        clean = clean.replace(/\b(esim|e sim|sim|1sim|2sim|physical|dual)\b/g, '');
+        // Удаляем все упоминания SIM
+        clean = clean.replace(/\b(esim|e sim|sim|1sim|2sim|physical|dual|физ)\b/g, '');
 
-        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'glacier', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'bronze', 'alm'];
+        // 4. ОЧИЩАЕМ ОТ ЦВЕТОВ
+        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'glacier', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'bronze', 'alm', 'burgunby', 'glacir'];
         colors.forEach(color => { clean = clean.replace(new RegExp(color, 'g'), ''); });
 
-        let modelName = clean.replace(/\s+/g, ' ').trim();
-        return `${modelName} | ${memory || 'НЕТ ПАМЯТИ'} | ${simType}`;
+        // 5. Убираем всё лишнее
+        clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
+        clean = clean.replace(/[^a-z0-9\s]/g, ' ');
+        clean = clean.replace(/\s+/g, ' ').trim();
+
+        // Возвращаем ключ: Модель + Память + Симка
+        return `${clean} | ${memory || 'NOMEM'} | ${simType}`;
     }
 
     let allProducts = {};
+    
     for (let i = 1; i <= 4; i++) {
         compareData[i].forEach(item => {
             const key = analyzeProductName(item.name);
-            if (!key || key.includes('| НЕТ ПАМЯТИ | STANDARD')) return;
+            if (!key || key.includes('NOMEM')) return; // Пропускаем, если не смогли найти память
 
             if (!allProducts[key]) {
                 allProducts[key] = { 
@@ -309,8 +348,10 @@
                     prices: {1: '-', 2: '-', 3: '-', 4: '-'} 
                 };
             }
+            
             let finalPrice = item.price;
             if (i === 4) finalPrice = Math.round((item.price / 3.65) * usdRate);
+
             if (allProducts[key].prices[i] === '-' || finalPrice < allProducts[key].prices[i]) {
                 allProducts[key].prices[i] = finalPrice;
             }
@@ -324,18 +365,16 @@
     sortedKeys.forEach(key => {
         const prod = allProducts[key];
         
-        // Собираем все существующие цены (исключая прочерки)
         let validPrices = [];
         for(let i=1; i<=4; i++) {
             if (prod.prices[i] !== '-') validPrices.push(prod.prices[i]);
         }
 
-        // Находим самую дешевую и самую дорогую
         let minPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
-        let maxPrice = validPrices.length > 1 ? Math.max(...validPrices) : null; // Если цена одна, она не может быть "дорогой"
+        let maxPrice = validPrices.length > 1 ? Math.max(...validPrices) : null; 
 
-        let simTag = prod.simType === 'ESIM' ? '<span class="tag blue">eSIM</span>' : '<span class="tag green">SIM+eSIM</span>';
         let memTag = `<span class="tag">${prod.memory}</span>`;
+        let simTag = prod.simType === 'ESIM' ? '<span class="tag blue">eSIM</span>' : '<span class="tag green">SIM+eSIM</span>';
 
         html += `
           <div class="compare-row">
@@ -344,15 +383,13 @@
             <div class="compare-grid">
         `;
 
-        // Выводим 4 колонки
         for(let i=1; i<=4; i++) {
             let price = prod.prices[i];
             let cellClass = '';
             
-            // Логика цветов
             if (price !== '-') {
-                if (price === minPrice) cellClass = 'price-best'; // Зеленый (самый дешевый)
-                else if (price === maxPrice) cellClass = 'price-worst'; // Красный (самый дорогой)
+                if (price === minPrice) cellClass = 'price-best';
+                else if (price === maxPrice) cellClass = 'price-worst';
             }
 
             let label = (i === 4) ? 'ДУБАЙ' : `ПОСТ ${i}`;
@@ -366,13 +403,10 @@
             `;
         }
 
-        html += `
-            </div>
-          </div>
-        `;
+        html += `</div></div>`;
     });
 
-    document.getElementById('compare-results').innerHTML = html || '<div style="text-align:center; color:#666;">Нет данных для сравнения.</div>';
+    document.getElementById('compare-results').innerHTML = html || '<div style="text-align:center; color:#666;">Нет данных для сравнения. Возможно, у поставщиков не указана память в названии.</div>';
   }
 </script>
 
