@@ -9,43 +9,34 @@
   body { background-color: #0f0f13; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; padding-bottom: 80px;}
   .container { max-width: 500px; margin: 0 auto; }
   
-  /* Админка */
+  /* Панель админа */
   .admin-panel { background: #1a1a20; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
   .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
-  .tab-btn { flex: 1; padding: 8px; background: #2a2a35; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;}
+  .tab-btn { flex: 1; padding: 8px; background: #2a2a35; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s;}
   .tab-btn.active { background: #007aff; font-weight: bold;}
-  textarea { width: 100%; height: 80px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
+  textarea { width: 100%; height: 100px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
   .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
   .input-group input { flex: 1; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; font-size: 16px; }
-  .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 8px;}
+  .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 8px; transition: 0.2s;}
   .btn-green { background: #00ff88; color: #000; }
   .btn-red { background: #e6194b; color: white; }
   .btn-blue { background: #007aff; color: white; }
   .btn-purple { background: #9b59b6; color: white; }
+  .btn:active { transform: scale(0.98); }
   
-  /* Каталог */
+  /* Каталог клиента */
   .header-text { color: #e0a800; font-size: 14px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; text-align: center;}
-  
-  .card { 
-    background: #1a1a20; border-radius: 10px; padding: 15px; margin-bottom: 10px; 
-    display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2a35;
-  }
-  .card.best { border-color: #00ff88; }
+  .card { background: #1a1a20; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2a35; }
   .info { flex: 1; padding-right: 10px; }
   .title { font-weight: bold; font-size: 15px; margin-bottom: 4px; }
   .desc { color: #888; font-size: 12px; }
-  
   .price-block { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;}
   .price { font-size: 16px; font-weight: bold; color: #fff; white-space: nowrap;}
   .btn-add { background: #007aff; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
   .btn-add.added { background: #00ff88; color: #000; }
 
   /* Корзина */
-  .cart-bar { 
-    position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a20; border-top: 1px solid #333; 
-    padding: 15px; display: none; justify-content: space-between; align-items: center;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.5); z-index: 100;
-  }
+  .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a20; border-top: 1px solid #333; padding: 15px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); z-index: 100; }
   .cart-bar.show { display: flex; }
   .cart-info { font-size: 14px; }
   .cart-total { font-size: 18px; font-weight: bold; color: #00ff88; }
@@ -57,52 +48,50 @@
   .phone { color: #00ff88; font-size: 18px; font-weight: bold; text-decoration: none; }
 
   /* Сравнение */
-  .compare-row { background: #1a1a20; border-radius: 10px; padding: 10px; margin-bottom: 10px; border: 1px solid #333; }
-  .compare-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #e0a800;}
-  .compare-grid { display: flex; justify-content: space-between; font-size: 13px; }
-  .compare-item { flex: 1; text-align: center; padding: 5px; border-radius: 5px; }
-  .compare-item.best { background: rgba(0, 255, 136, 0.2); color: #00ff88; font-weight: bold; }
+  .compare-row { background: #1a1a20; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #333; }
+  .compare-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #e0a800;}
+  .compare-grid { display: flex; gap: 5px; font-size: 13px; }
+  .compare-item { flex: 1; text-align: center; padding: 8px 5px; border-radius: 5px; background: #0f0f13; border: 1px solid #333; }
+  .compare-item.best { background: rgba(0, 255, 136, 0.15); border-color: #00ff88; color: #00ff88; font-weight: bold; }
+  .compare-label { font-size: 10px; color: #888; display: block; margin-bottom: 4px;}
 </style>
 </head>
 <body>
 
 <div class="container">
   
-  <!-- Кнопка для админа (видна только в режиме админа) -->
-  <button class="btn btn-blue admin-only" onclick="switchView('client')" style="margin-bottom: 15px;">👁 Посмотреть как Клиент (Ссылка для отправки)</button>
+  <button class="btn btn-blue" id="btn-view-client" onclick="switchView('client')" style="margin-bottom: 15px; display: none;">👁 Посмотреть как Клиент</button>
 
   <!-- ПАНЕЛЬ АДМИНА -->
-  <div class="admin-panel admin-only" id="admin-panel">
+  <div class="admin-panel" id="admin-panel">
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab(1)">Поставщик 1</button>
       <button class="tab-btn" onclick="switchTab(2)">Поставщик 2</button>
       <button class="tab-btn" onclick="switchTab(3)">Поставщик 3</button>
     </div>
     
-    <textarea id="input-text" placeholder="Вставьте список сюда..."></textarea>
+    <textarea id="input-text" oninput="autoSaveCurrentTab()" placeholder="Вставьте список сюда..."></textarea>
     
     <div class="input-group">
-      <input type="number" id="markup-val" placeholder="Наценка" value="2000">
-      <select id="markup-type" style="background:#0f0f13; color:white; border:1px solid #444; border-radius:8px; padding:10px; font-size:16px;">
+      <input type="number" id="markup-val" placeholder="Наценка" value="2000" onchange="renderClientCatalog()">
+      <select id="markup-type" style="background:#0f0f13; color:white; border:1px solid #444; border-radius:8px; padding:10px; font-size:16px;" onchange="renderClientCatalog()">
         <option value="rub">₽</option>
         <option value="percent">%</option>
       </select>
     </div>
     
-    <button class="btn btn-green" onclick="saveAdminData()">💾 Сохранить (для поставщика)</button>
-    <button class="btn btn-purple" onclick="switchView('compare')">📊 Сравнить цены (все 3)</button>
-    <button class="btn btn-red" id="btn-download" onclick="downloadImage()" style="display:none; margin-top: 15px;">📥 Скачать картинку (для Клиента)</button>
+    <button class="btn btn-purple" onclick="switchView('compare')">📊 Умное сравнение цен</button>
+    <button class="btn btn-green" onclick="switchView('client')">👁 Посмотреть прайс клиента</button>
+    <button class="btn btn-red" id="btn-download" onclick="downloadImage()" style="margin-top: 15px;">📥 Скачать картинку</button>
   </div>
 
-  <!-- КАТАЛОГ (Для клиента и админа) -->
+  <!-- КАТАЛОГ (Для клиента) -->
   <div id="view-client" style="display: none;">
     <div class="header-text">
       ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ
     </div>
 
-    <div id="result-list">
-      <div style="text-align:center; color:#666; padding: 20px;">Загрузка...</div>
-    </div>
+    <div id="result-list"></div>
 
     <div class="footer">
       <h4>💳 Доступна рассрочка</h4>
@@ -115,11 +104,11 @@
     </div>
   </div>
 
-  <!-- РЕЖИМ СРАВНЕНИЯ (Для админа) -->
+  <!-- РЕЖИМ СРАВНЕНИЯ -->
   <div id="view-compare" style="display: none;">
-    <div class="header-text">СРАВНЕНИЕ ЗАКУПОЧНЫХ ЦЕН</div>
+    <div class="header-text">СРАВНЕНИЕ ЦЕН</div>
     <div id="compare-list"></div>
-    <button class="btn btn-blue" onclick="switchView('admin')" style="margin-top: 15px;">⬅ Вернуться к редактированию</button>
+    <button class="btn btn-blue" onclick="switchView('admin')" style="margin-top: 15px;">⬅ Вернуться назад</button>
   </div>
 
 </div>
@@ -137,24 +126,27 @@
   let isAdminMode = false; 
 
   window.onload = function() {
-    // Восстанавливаем данные
-    const saved = localStorage.getItem('freezone_data_v2');
+    const saved = localStorage.getItem('freezone_data_v3');
     if (saved) supplierData = JSON.parse(saved);
 
-    // Проверяем режим (Админ или Клиент)
     const urlParams = new URLSearchParams(window.location.search);
     isAdminMode = urlParams.get('admin') === '1';
     
-    document.body.classList.add(isAdminMode ? 'is-admin' : 'is-client');
-    document.querySelector('.admin-only').style.display = isAdminMode ? 'block' : 'none';
-    
     if (isAdminMode) {
-      switchView('admin');
-      document.getElementById('input-text').value = supplierData[currentTab].map(i => i.raw).join('\n');
+      document.getElementById('btn-view-client').style.display = 'block';
+      switchTab(1); // Загружаем первого поставщика
     } else {
+      document.getElementById('admin-panel').style.display = 'none';
       switchView('client');
     }
   };
+
+  // Автосохранение при вводе текста (чтобы не терялось при переключении)
+  function autoSaveCurrentTab() {
+    const rawText = document.getElementById('input-text').value;
+    supplierData[currentTab] = parseInput(rawText);
+    localStorage.setItem('freezone_data_v3', JSON.stringify(supplierData));
+  }
 
   function switchView(mode) {
     document.getElementById('admin-panel').style.display = (mode === 'admin') ? 'block' : 'none';
@@ -166,10 +158,14 @@
   }
 
   function switchTab(tabNum) {
+    autoSaveCurrentTab(); // Сохраняем текущую вкладку перед переключением
+    
     currentTab = tabNum;
     document.querySelectorAll('.tab-btn').forEach((btn, index) => {
       btn.classList.toggle('active', index + 1 === tabNum);
     });
+    
+    // Загружаем сохраненный текст для новой вкладки
     document.getElementById('input-text').value = supplierData[tabNum].map(i => i.raw).join('\n');
   }
 
@@ -178,22 +174,15 @@
     text.split('\n').forEach(line => {
       line = line.trim();
       if (!line || line.includes('ПРЕДЗАКАЗ') || line.includes('ВЫДАЧА НА')) return;
+      
       const priceMatch = line.match(/^(.*?)\s+(\d+)$/);
       if (priceMatch) {
         parsed.push({ raw: line, name: priceMatch[1].trim(), price: parseInt(priceMatch[2]) });
+      } else {
+        parsed.push({ raw: line, isHeader: true });
       }
     });
     return parsed;
-  }
-
-  function saveAdminData() {
-    const rawText = document.getElementById('input-text').value;
-    supplierData[currentTab] = parseInput(rawText);
-    localStorage.setItem('freezone_data_v2', JSON.stringify(supplierData));
-    
-    alert("Данные поставщика " + currentTab + " сохранены!");
-    document.getElementById('btn-download').style.display = 'block';
-    switchView('client'); // Показываем как это выглядит для клиента
   }
 
   // --- ОТРИСОВКА ДЛЯ КЛИЕНТА ---
@@ -202,11 +191,11 @@
     const markupVal = parseFloat(document.getElementById('markup-val').value) || 0;
     const markupType = document.getElementById('markup-type').value;
     
-    // Берем данные ПЕРВОГО поставщика для клиента (вы можете поменять на 2 или 3)
+    // Для клиента берем данные ПЕРВОГО поставщика (Поставщик 1)
     const dataToShow = supplierData[1]; 
 
     if (!dataToShow || dataToShow.length === 0) {
-      container.innerHTML = '<div style="text-align:center; color:#666; padding: 20px;">Прайс пуст. Сохраните данные в режиме Админа.</div>';
+      container.innerHTML = '<div style="text-align:center; color:#666; padding: 20px;">Список пуст. Добавьте товары в режиме Админа.</div>';
       return;
     }
 
@@ -214,6 +203,11 @@
     const formatPrice = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
     dataToShow.forEach(item => {
+        if (item.isHeader) {
+            html += `<div class="header-text" style="margin-top:15px; text-align:left;">${item.raw}</div>`;
+            return;
+        }
+
         let finalPrice = item.price;
         if (markupType === 'rub') finalPrice += markupVal;
         else finalPrice = Math.round(item.price * (1 + markupVal / 100));
@@ -243,25 +237,49 @@
     container.innerHTML = html;
   }
 
-  // --- ОТРИСОВКА СРАВНЕНИЯ ---
+  // --- УМНОЕ СРАВНЕНИЕ ---
   function renderCompare() {
     const container = document.getElementById('compare-list');
     
-    // Собираем все уникальные названия товаров
+    // Функция для нормализации названия (убираем флаги, цвета, лишние пробелы)
+    function getBaseName(name) {
+        // Убираем эмодзи флагов (первые символы)
+        let clean = name.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
+        // Пытаемся выделить модель и память (например, 12/256)
+        const specMatch = clean.match(/(.*?)\s+(\d+\/\d+)/);
+        if (specMatch) {
+            // Возвращаем только модель + память (без цвета)
+            return (specMatch[1] + ' ' + specMatch[2]).toLowerCase().replace(/\s+/g, ' ');
+        }
+        return clean.toLowerCase().replace(/\s+/g, ' ');
+    }
+
     let allProducts = {};
+    
+    // Собираем данные
     for (let i = 1; i <= 3; i++) {
         supplierData[i].forEach(item => {
-            const key = item.name.toLowerCase();
-            if (!allProducts[key]) allProducts[key] = { name: item.name, prices: {1: '-', 2: '-', 3: '-'} };
-            allProducts[key].prices[i] = item.price;
+            if (item.isHeader) return;
+            const key = getBaseName(item.name);
+            
+            if (!allProducts[key]) {
+                allProducts[key] = { displayName: getBaseName(item.name).toUpperCase(), prices: {1: '-', 2: '-', 3: '-'} };
+            }
+            // Если у поставщика несколько цветов одной модели, оставляем самый дешевый
+            if (allProducts[key].prices[i] === '-' || item.price < allProducts[key].prices[i]) {
+                allProducts[key].prices[i] = item.price;
+            }
         });
     }
 
     let html = '';
     const formatPrice = (num) => num === '-' ? '-' : num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-    // Для каждого товара находим минимальную цену
-    Object.values(allProducts).forEach(prod => {
+    // Сортируем по алфавиту для удобства
+    const sortedKeys = Object.keys(allProducts).sort();
+
+    sortedKeys.forEach(key => {
+        const prod = allProducts[key];
         let minPrice = Infinity;
         let bestSupplier = null;
         
@@ -274,11 +292,20 @@
 
         html += `
           <div class="compare-row">
-            <div class="compare-title">${prod.name}</div>
+            <div class="compare-title">${prod.displayName}</div>
             <div class="compare-grid">
-              <div class="compare-item ${bestSupplier === 1 ? 'best' : ''}">П1<br>${formatPrice(prod.prices[1])} ₽</div>
-              <div class="compare-item ${bestSupplier === 2 ? 'best' : ''}">П2<br>${formatPrice(prod.prices[2])} ₽</div>
-              <div class="compare-item ${bestSupplier === 3 ? 'best' : ''}">П3<br>${formatPrice(prod.prices[3])} ₽</div>
+              <div class="compare-item ${bestSupplier === 1 ? 'best' : ''}">
+                <span class="compare-label">ПОСТ 1</span>
+                ${formatPrice(prod.prices[1])} ₽
+              </div>
+              <div class="compare-item ${bestSupplier === 2 ? 'best' : ''}">
+                <span class="compare-label">ПОСТ 2</span>
+                ${formatPrice(prod.prices[2])} ₽
+              </div>
+              <div class="compare-item ${bestSupplier === 3 ? 'best' : ''}">
+                <span class="compare-label">ПОСТ 3</span>
+                ${formatPrice(prod.prices[3])} ₽
+              </div>
             </div>
           </div>
         `;
@@ -316,7 +343,6 @@
   }
 
   function downloadImage() {
-    // Временно скрываем кнопки "Купить" для картинки
     document.querySelectorAll('.btn-add').forEach(btn => btn.style.display = 'none');
     
     html2canvas(document.getElementById('view-client'), { scale: 2, backgroundColor: "#0f0f13" }).then(canvas => {
@@ -324,8 +350,6 @@
         link.download = 'prays.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
-        
-        // Возвращаем кнопки обратно
         document.querySelectorAll('.btn-add').forEach(btn => btn.style.display = 'block');
     });
   }
