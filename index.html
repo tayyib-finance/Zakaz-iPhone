@@ -41,11 +41,13 @@
   .compare-block { background: #1a1a20; padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
   .compare-block textarea { height: 100px; margin-bottom: 5px;}
   .compare-block .btn-clear { padding: 8px; font-size: 12px; width: 100%; background: #333; color: #aaa; border-radius: 6px; border: none;}
+  .rate-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: #2a2a35; padding: 10px; border-radius: 8px;}
+  .rate-input input { width: 80px; padding: 8px; border-radius: 5px; border: none; font-size: 16px; font-weight: bold; text-align: center;}
   
   .compare-row { background: #0f0f13; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #333; }
   .compare-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #e0a800;}
-  .compare-grid { display: flex; gap: 5px; font-size: 13px; }
-  .compare-item { flex: 1; text-align: center; padding: 8px 5px; border-radius: 5px; background: #1a1a20; border: 1px solid #333; }
+  .compare-grid { display: flex; gap: 5px; font-size: 12px; flex-wrap: wrap;}
+  .compare-item { flex: 1; min-width: 45%; text-align: center; padding: 8px 5px; border-radius: 5px; background: #1a1a20; border: 1px solid #333; margin-bottom: 5px;}
   .compare-item.best { background: rgba(0, 255, 136, 0.15); border-color: #00ff88; color: #00ff88; font-weight: bold; }
   .compare-label { font-size: 10px; color: #888; display: block; margin-bottom: 4px;}
 
@@ -63,13 +65,13 @@
   
   <div class="main-tabs">
     <div class="main-tab active" id="tab-price" onclick="switchMainTab('price')">📱 Прайс для клиента</div>
-    <div class="main-tab" id="tab-compare" onclick="switchMainTab('compare')">📊 Сравнение поставщиков</div>
+    <div class="main-tab" id="tab-compare" onclick="switchMainTab('compare')">📊 Сравнение (4 поста)</div>
   </div>
 
   <!-- ВКЛАДКА 1: ПРАЙС -->
   <div id="view-price" style="display: block;">
     <div class="panel" id="admin-controls">
-      <textarea id="input-text" placeholder="Вставьте готовый список для клиента (Например: 18 Pro 256 Black - 104500)"></textarea>
+      <textarea id="input-text" placeholder="Вставьте готовый список для клиента..."></textarea>
       <div class="btn-group">
         <button class="btn btn-green" onclick="processList()">Рассчитать</button>
         <button class="btn btn-grey" onclick="clearPriceList()">Очистить</button>
@@ -95,8 +97,16 @@
     </div>
   </div>
 
-  <!-- ВКЛАДКА 2: СРАВНЕНИЕ -->
+  <!-- ВКЛАДКА 2: СРАВНЕНИЕ (4 ПОСТАВЩИКА) -->
   <div id="view-compare" style="display: none;">
+    
+    <!-- Курс доллара для Дубая -->
+    <div class="rate-input">
+      <span>🇦🇪 Курс $ (Дубай):</span>
+      <input type="number" id="usd-rate" value="85" step="0.1">
+      <span>₽</span>
+    </div>
+
     <div class="compare-block">
       <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 1</div>
       <textarea id="sup1" placeholder="Вставьте список 1..."></textarea>
@@ -112,7 +122,16 @@
       <textarea id="sup3" placeholder="Вставьте список 3..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(3)">Очистить 3</button>
     </div>
+    
+    <!-- Блок Дубая -->
+    <div class="compare-block" style="border-color: #e0a800;">
+      <div style="font-weight:bold; margin-bottom:5px; color:#e0a800;">🇦🇪 Поставщик 4 (Дубай в AED)</div>
+      <textarea id="sup4" placeholder="Вставьте список Дубая (модель на строке, цвета под ней)..."></textarea>
+      <button class="btn-clear" onclick="clearSupplier(4)">Очистить 4</button>
+    </div>
+
     <button class="btn btn-green" onclick="runComparison()" style="margin-bottom: 20px;">Сравнить цены</button>
+    
     <div id="compare-results"></div>
   </div>
 
@@ -120,21 +139,41 @@
 
 <script>
   let currentPriceData = []; 
-  let compareData = { 1: [], 2: [], 3: [] };
+  let compareData = { 1: [], 2: [], 3: [], 4: [] };
 
-  // Универсальная функция поиска цены (понимает тире, дефисы и т.д.)
+  // Универсальная функция поиска цены (для 1, 2, 3 поставщиков)
   function extractPriceAndName(line) {
-    // Ищем последнее число в строке (цена)
     const priceMatch = line.match(/(\d+)(?!.*\d)/); 
     if (!priceMatch) return null;
-
     const price = parseInt(priceMatch[1]);
-    // Отрезаем цену от названия
     let name = line.substring(0, priceMatch.index).trim();
-    // Убираем лишние тире и пробелы в конце названия
     name = name.replace(/[-–—\s]+$/, '').trim(); 
-
     return { name: name, price: price };
+  }
+
+  // СПЕЦИАЛЬНЫЙ ПАРСЕР ДЛЯ ДУБАЯ (4-й поставщик)
+  function parseDubaiText(text) {
+    let parsed = [];
+    let currentModel = "";
+    
+    text.split('\n').forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      
+      // Если строка содержит буквы и цифры (GB, TB) и НЕ содержит цену в конце — это заголовок модели
+      if (line.match(/(GB|TB)/i) && !line.match(/\s+\d+$/)) {
+        currentModel = line;
+        return;
+      }
+
+      // Если это строка с цветом и ценой (например, "Burgundy 4510")
+      const data = extractPriceAndName(line);
+      if (data && currentModel) {
+        // Склеиваем модель и цвет: "Iph 18 Pro 256GB Burgundy"
+        parsed.push({ name: `${currentModel} ${data.name}`, price: data.price, isDubai: true });
+      }
+    });
+    return parsed;
   }
 
   function switchMainTab(tab) {
@@ -179,7 +218,6 @@
 
     currentPriceData.forEach((item, index) => {
         const finalPrice = item.originalPrice + item.manualMarkup;
-        
         html += `
           <div class="card">
             <div class="card-top">
@@ -231,61 +269,52 @@
     document.getElementById('compare-results').innerHTML = '';
   }
 
-  function parseSupplierText(text) {
-    let parsed = [];
-    text.split('\n').forEach(line => {
-      line = line.trim();
-      if (!line) return;
-      const data = extractPriceAndName(line);
-      if (data) parsed.push(data);
-    });
-    return parsed;
-  }
-
   function runComparison() {
     compareData[1] = parseSupplierText(document.getElementById('sup1').value);
     compareData[2] = parseSupplierText(document.getElementById('sup2').value);
     compareData[3] = parseSupplierText(document.getElementById('sup3').value);
+    compareData[4] = parseDubaiText(document.getElementById('sup4').value);
 
-    // УМНАЯ ОЧИСТКА: убираем флаги, цвета и лишние слова
+    const usdRate = parseFloat(document.getElementById('usd-rate').value) || 85;
+
+    // УМНАЯ ОЧИСТКА
     function getBaseName(name) {
-        // Приводим к нижнему регистру
         let clean = name.toLowerCase();
-        
-        // Убираем эмодзи флагов (если есть)
         clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
         
-        // Список цветов, которые нужно игнорировать при сравнении
-        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'burgunby', 'glacier', 'glacir', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream'];
+        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'burgunby', 'glacier', 'glacir', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'esim'];
         colors.forEach(color => {
             clean = clean.replace(new RegExp(color, 'g'), '');
         });
 
-        // Оставляем только модель и характеристики (цифры, слэши, буквы памяти)
-        // Удаляем все символы кроме букв, цифр и пробелов
         clean = clean.replace(/[^a-zа-я0-9\s]/g, ' ');
-        
-        // Убираем лишние пробелы
         clean = clean.replace(/\s+/g, ' ').trim();
 
         return clean;
     }
 
     let allProducts = {};
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 4; i++) {
         compareData[i].forEach(item => {
             const key = getBaseName(item.name);
-            // Если вдруг ключ получился пустым (например, в строке был только цвет), пропускаем
             if (!key) return; 
 
             if (!allProducts[key]) {
-                // Для красивого отображения берем оригинальное название первой встретившейся модели
-                allProducts[key] = { displayName: item.name, prices: {1: '-', 2: '-', 3: '-'} };
+                // Убираем название цвета из заголовка для красоты
+                let displayName = item.name;
+                if (i === 4) displayName = item.name.replace(/(Black|Silver|Blue|White|Burgundy|Glacier|Grey|Navy|Violet|Pink|Gold|Green|Purple|Lilac|IceBlue|Graphite|JetBlack|Pistashio|Cream)/gi, '').trim();
+                
+                allProducts[key] = { displayName: displayName, prices: {1: '-', 2: '-', 3: '-', 4: '-'} };
             }
             
-            // Если у поставщика несколько цветов, берем самый дешевый
-            if (allProducts[key].prices[i] === '-' || item.price < allProducts[key].prices[i]) {
-                allProducts[key].prices[i] = item.price;
+            // Для Дубая (4) считаем цену в рублях по формуле
+            let finalPrice = item.price;
+            if (i === 4) {
+                finalPrice = Math.round((item.price / 3.65) * usdRate);
+            }
+
+            if (allProducts[key].prices[i] === '-' || finalPrice < allProducts[key].prices[i]) {
+                allProducts[key].prices[i] = finalPrice;
             }
         });
     }
@@ -299,7 +328,7 @@
         let minPrice = Infinity;
         let bestSupplier = null;
         
-        for(let i=1; i<=3; i++) {
+        for(let i=1; i<=4; i++) {
             if(prod.prices[i] !== '-' && prod.prices[i] < minPrice) {
                 minPrice = prod.prices[i];
                 bestSupplier = i;
@@ -313,6 +342,7 @@
               <div class="compare-item ${bestSupplier === 1 ? 'best' : ''}"><span class="compare-label">ПОСТ 1</span>${formatPrice(prod.prices[1])} ₽</div>
               <div class="compare-item ${bestSupplier === 2 ? 'best' : ''}"><span class="compare-label">ПОСТ 2</span>${formatPrice(prod.prices[2])} ₽</div>
               <div class="compare-item ${bestSupplier === 3 ? 'best' : ''}"><span class="compare-label">ПОСТ 3</span>${formatPrice(prod.prices[3])} ₽</div>
+              <div class="compare-item ${bestSupplier === 4 ? 'best' : ''}" style="border-color: #e0a800;"><span class="compare-label" style="color:#e0a800;">ДУБАЙ (₽)</span>${formatPrice(prod.prices[4])} ₽</div>
             </div>
           </div>
         `;
