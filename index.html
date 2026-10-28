@@ -3,437 +3,1009 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FREE ZONE</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<title>Склад и Витрина</title>
 <style>
-  body { background-color: #0f0f13; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; padding-bottom: 80px;}
-  .container { max-width: 500px; margin: 0 auto; }
-  .main-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-  .main-tab { flex: 1; padding: 12px; background: #1a1a20; color: #888; border: 1px solid #333; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
-  .main-tab.active { background: #007aff; color: white; border-color: #007aff; }
-  .panel { background: #1a1a20; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-  textarea { width: 100%; height: 120px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
-  .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
-  .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
-  .btn-green { background: #00ff88; color: #000; }
-  .btn-red { background: #e6194b; color: white; }
-  .btn-blue { background: #007aff; color: white; }
-  .btn-grey { background: #444; color: white; }
+  :root {
+    --bg-main: #0f111a; --bg-card: #1a1d2d; --text-main: #ffffff;
+    --text-muted: #8b92a5; --accent: #e11d48; --green: #10b981;
+    --btn-blue: #3b82f6; --old-price: #64748b; --yellow: #eab308;
+  }
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg-main); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 70px; }
   
-  .header-text { color: #e0a800; font-size: 14px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; text-align: center;}
-  .card { background: #1a1a20; border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; border: 1px solid #2a2a35; }
-  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;}
-  .info { flex: 1; padding-right: 10px; }
-  .title { font-weight: bold; font-size: 15px; margin-bottom: 2px; }
-  .price { font-size: 18px; font-weight: bold; color: #fff; white-space: nowrap;}
-  .manual-markup { display: flex; align-items: center; gap: 5px; margin-top: 8px; background: #0f0f13; padding: 5px 10px; border-radius: 6px; border: 1px solid #333;}
-  .manual-markup span { font-size: 12px; color: #aaa; }
-  .manual-markup input { width: 60px; background: transparent; border: none; color: #00ff88; font-size: 14px; font-weight: bold; outline: none; text-align: center;}
-  
-  .compare-block { background: #1a1a20; padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
-  .compare-block textarea { height: 100px; margin-bottom: 5px;}
-  .compare-block .btn-clear { padding: 8px; font-size: 12px; width: 100%; background: #333; color: #aaa; border-radius: 6px; border: none;}
-  .rate-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: #2a2a35; padding: 10px; border-radius: 8px;}
-  .rate-input input { width: 80px; padding: 8px; border-radius: 5px; border: none; font-size: 16px; font-weight: bold; text-align: center;}
-  
-  .compare-row { background: #0f0f13; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #333; }
-  .compare-title { font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #e0a800; line-height: 1.3;}
-  .compare-tags { display: flex; gap: 5px; margin-bottom: 10px; font-size: 10px; flex-wrap: wrap;}
-  .tag { background: #333; padding: 2px 6px; border-radius: 4px; color: #ccc;}
-  .tag.blue { background: #007aff; color: white; }
-  .tag.green { background: #00ff88; color: #000; }
+  /* Навигация */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1d2d; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); z-index: 100; }
+  .nav-item { flex: 1; padding: 15px 0; text-align: center; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; border-top: 2px solid transparent; }
+  .nav-item.active { color: var(--green); border-top-color: var(--green); background: #202436; }
 
-  .compare-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-  .compare-item { text-align: center; padding: 8px 2px; border-radius: 5px; background: #1a1a20; border: 1px solid #333; font-size: 11px; font-weight: bold;}
-  .compare-label { font-size: 9px; color: #888; display: block; margin-bottom: 4px; font-weight: normal;}
-  
-  .price-best { background: rgba(0, 255, 136, 0.15); border-color: #00ff88; color: #00ff88; }
-  .price-worst { background: rgba(230, 25, 75, 0.15); border-color: #e6194b; color: #e6194b; }
+  .page { padding: 16px; display: none; }
+  .page.active { display: block; }
+  .btn { padding: 10px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; width: 100%;}
+  .btn-green { background: var(--green); color: #000; }
+  .btn-blue { background: var(--btn-blue); color: #fff; }
+  .btn-gray { background: #2a2e42; color: #fff; }
+  .btn-red { background: #ef4444; color: #fff; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; border-radius: 6px;}
+  .btn-outline { background: transparent; border: 1px solid var(--btn-blue); color: var(--btn-blue); }
+  .btn-yellow { background: var(--yellow); color: #000; }
+  .btn-purple { background: #8b5cf6; color: #fff; }
 
-  .footer { background: #1a1a20; border: 1px solid #4a3a1a; border-radius: 12px; padding: 15px; margin-top: 20px; text-align: center; }
-  .footer h4 { color: #e0a800; margin: 0 0 5px 0; font-size: 14px;}
-  .footer p { font-size: 12px; color: #ccc; margin: 5px 0 10px 0; }
-  .phone { color: #00ff88; font-size: 18px; font-weight: bold; text-decoration: none; }
-  .hide-on-capture { display: none !important; }
+  /* Дашборд */
+  .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .dash-card { background: var(--bg-card); padding: 12px; border-radius: 12px; border: 1px solid #2a2e42; }
+  .dash-title { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .dash-value { font-size: 16px; font-weight: 700; }
+  .green-text { color: #4ade80; }
+  .red-text { color: #f87171; }
+  
+  /* Карточки склада */
+  .section-title { font-size: 13px; color: #94a3b8; margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #334155; padding-bottom: 6px; display: flex; justify-content: space-between;}
+  
+  .deal-card { background: var(--bg-card); border: 1px solid #2a2e42; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+  .deal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .deal-title { font-weight: 700; font-size: 15px; word-break: break-word;}
+  .deal-imei { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .deal-price { text-align: right; flex-shrink: 0; margin-left: 10px;}
+  .deal-buy { font-size: 11px; color: var(--text-muted); }
+  .deal-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 10px; margin-top: 10px; flex-wrap: wrap; gap: 10px;}
+  .status { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap;}
+  .st-in { background: #1e3a8a; color: #93c5fd; }
+  .st-sold { background: #14532d; color: #86efac; }
+  .st-booked { background: #78350f; color: #fde047; }
+  .action-buttons-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;}
+
+  /* Витрина */
+  .action-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
+  .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-top: 10px; margin-bottom: 20px; overflow: hidden;}
+  
+  /* Темы витрины */
+  .theme-dark { background: radial-gradient(circle at top, #2a0e14 0%, #0f111a 60%); }
+  .theme-light { background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%); color: #1f2937; }
+  .theme-neon { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
+  
+  .poster { padding: 30px 20px; text-align: center; border-radius: 22px; }
+  .poster-title { font-size: 24px; font-weight: 900; margin: 0 0 6px; letter-spacing: 1px; }
+  .poster-subtitle { font-size: 11px; font-weight: 700; margin: 0 0 20px; text-transform: uppercase; letter-spacing: 1px;}
+  .poster-list { display: flex; flex-direction: column; gap: 10px; }
+  
+  /* Карточка товара на витрине */
+  .poster-item { border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; text-align: left; gap: 10px; }
+  .p-info { flex: 1; min-width: 0; }
+  .p-model { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
+  .p-qty { font-size: 11px; padding: 2px 6px; border-radius: 4px; white-space: nowrap;}
+  .p-desc { font-size: 11px; word-break: break-word;}
+  .p-price-wrap { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+  .p-price { font-size: 18px; font-weight: 800; white-space: nowrap;}
+  .p-old-price { font-size: 12px; text-decoration: line-through; white-space: nowrap;}
+  .p-discount { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-top: 4px; font-weight: 700; white-space: nowrap;}
+
+  .poster-footer { margin-top: 20px; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+  .footer-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .footer-row .icon { font-size: 16px; }
+  .footer-sub { font-size: 11px; font-weight: normal; margin-left: 24px; margin-top: -5px;}
+  .footer-phone { margin-top: 5px; text-align: center; padding-top: 12px; }
+  .phone-number { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+
+  /* Стили темной */
+  .theme-dark .poster-title { color: #fff; }
+  .theme-dark .poster-subtitle { color: #e11d48; }
+  .theme-dark .poster-item { background: rgba(30, 15, 20, 0.7); border: 1px solid #4a202a; }
+  .theme-dark .p-model { color: #fff; }
+  .theme-dark .p-qty { background: #334155; color: #fff; }
+  .theme-dark .p-desc { color: #8b92a5; }
+  .theme-dark .p-price { color: #fff; }
+  .theme-dark .p-old-price { color: #64748b; }
+  .theme-dark .p-discount { background: #e11d48; color: #fff; }
+  .theme-dark .poster-footer { border: 1px solid #3f2e14; background: rgba(63, 46, 20, 0.3); }
+  .theme-dark .footer-row { color: #f5c76a; }
+  .theme-dark .footer-sub { color: #aaa; }
+  .theme-dark .footer-phone { border-top: 1px dashed #5a4020; }
+  .theme-dark .phone-number { color: #4ade80; }
+
+  /* Стили светлой */
+  .theme-light .poster-title { color: #111827; }
+  .theme-light .poster-subtitle { color: #d97706; }
+  .theme-light .poster-item { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+  .theme-light .p-model { color: #111827; }
+  .theme-light .p-qty { background: #f3f4f6; color: #4b5563; }
+  .theme-light .p-desc { color: #6b7280; }
+  .theme-light .p-price { color: #111827; }
+  .theme-light .p-old-price { color: #9ca3af; }
+  .theme-light .p-discount { background: #ef4444; color: #fff; }
+  .theme-light .poster-footer { border: 1px solid #fde68a; background: #fffbeb; }
+  .theme-light .footer-row { color: #b45309; }
+  .theme-light .footer-sub { color: #78716c; }
+  .theme-light .footer-phone { border-top: 1px dashed #fcd34d; }
+  .theme-light .phone-number { color: #059669; }
+
+  /* Стили неон */
+  .theme-neon .poster-title { color: #00f2fe; text-shadow: 0 0 10px rgba(0,242,254,0.5); }
+  .theme-neon .poster-subtitle { color: #fe0979; }
+  .theme-neon .poster-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(0,242,254,0.3); backdrop-filter: blur(5px); }
+  .theme-neon .p-model { color: #fff; }
+  .theme-neon .p-qty { background: #4f46e5; color: #fff; }
+  .theme-neon .p-desc { color: #a78bfa; }
+  .theme-neon .p-price { color: #00f2fe; }
+  .theme-neon .p-old-price { color: #6b7280; }
+  .theme-neon .p-discount { background: #fe0979; color: #fff; }
+  .theme-neon .poster-footer { border: 1px solid rgba(79, 70, 229, 0.5); background: rgba(79, 70, 229, 0.1); }
+  .theme-neon .footer-row { color: #a78bfa; }
+  .theme-neon .footer-sub { color: #9ca3af; }
+  .theme-neon .footer-phone { border-top: 1px dashed #4f46e5; }
+  .theme-neon .phone-number { color: #00f2fe; }
+
+  /* Модалки */
+  .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+  .modal.active { display: flex; }
+  .modal-content { background: var(--bg-card); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+  .modal-content h2 { margin-top: 0; font-size: 18px; margin-bottom: 16px; }
+  
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .input-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .input-group input, .input-group select, .input-group textarea { width: 100%; background: #0f111a; border: 1px solid #2a2e42; color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; outline: none;}
 </style>
 </head>
 <body>
 
-<div class="container">
-  
-  <div class="main-tabs">
-    <div class="main-tab active" id="tab-price" onclick="switchMainTab('price')">📱 Прайс для клиента</div>
-    <div class="main-tab" id="tab-compare" onclick="switchMainTab('compare')">📊 Сравнение (4 поста)</div>
-  </div>
-
-  <!-- ВКЛАДКА 1: ПРАЙС -->
-  <div id="view-price" style="display: block;">
-    <div class="panel" id="admin-controls">
-      <textarea id="input-text" placeholder="Вставьте готовый список для клиента..."></textarea>
-      <div class="btn-group">
-        <button class="btn btn-green" onclick="processList()">Рассчитать</button>
-        <button class="btn btn-grey" onclick="clearPriceList()">Очистить</button>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-red" onclick="downloadImage()">📥 Скачать картинку</button>
-        <button class="btn btn-blue" onclick="sendToWhatsApp()">📲 В WhatsApp</button>
-      </div>
-    </div>
-
-    <div id="capture-area">
-      <div class="header-text">ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ</div>
-      <div id="result-list"><div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div></div>
-      <div class="footer">
-        <h4>💳 Доступна рассрочка</h4>
-        <p>Без банков и переплат</p>
-        <h4>🔥 Предзаказ ВЫГОДНЕЕ!</h4>
-        <p>Аванс всего 3000 ₽. Экономьте!</p>
-        <hr style="border-color: #333; margin: 10px 0;">
-        <p>Заказ по телефону / WhatsApp:</p>
-        <a href="tel:+79887836677" class="phone">+7 988 783-66-77</a>
-      </div>
+<div id="page-deals" class="page active">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <h1 style="font-size: 20px; margin: 0;">📱 Мой склад</h1>
+    <div style="display:flex; gap:6px;">
+      <button class="btn-sm btn-gray" onclick="openBackupModal()">⚙️ База</button>
+      <button class="btn-sm btn-gray" onclick="openExpenseModal()">💸 Расход</button>
     </div>
   </div>
 
-  <!-- ВКЛАДКА 2: СРАВНЕНИЕ -->
-  <div id="view-compare" style="display: none;">
-    <div class="rate-input">
-      <span>🇦🇪 Курс $ (Дубай):</span>
-      <input type="number" id="usd-rate" value="85" step="0.1">
-      <span>₽</span>
-    </div>
-
-    <div class="compare-block">
-      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 1 (Ахмед)</div>
-      <textarea id="sup1" placeholder="Вставьте список 1..."></textarea>
-      <button class="btn-clear" onclick="clearSupplier(1)">Очистить 1</button>
-    </div>
-    <div class="compare-block">
-      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 2 (Абдул)</div>
-      <textarea id="sup2" placeholder="Вставьте список 2..."></textarea>
-      <button class="btn-clear" onclick="clearSupplier(2)">Очистить 2</button>
-    </div>
-    <div class="compare-block">
-      <div style="font-weight:bold; margin-bottom:5px; color:#007aff;">Поставщик 3 (Ахмед 2)</div>
-      <textarea id="sup3" placeholder="Вставьте список 3..."></textarea>
-      <button class="btn-clear" onclick="clearSupplier(3)">Очистить 3</button>
-    </div>
-    <div class="compare-block" style="border-color: #e0a800;">
-      <div style="font-weight:bold; margin-bottom:5px; color:#e0a800;">🇦🇪 Поставщик 4 (Дубай в AED)</div>
-      <textarea id="sup4" placeholder="Вставьте список Дубая..."></textarea>
-      <button class="btn-clear" onclick="clearSupplier(4)">Очистить 4</button>
-    </div>
-
-    <button class="btn btn-green" onclick="runComparison()" style="margin-bottom: 20px;">Сравнить цены</button>
-    <div id="compare-results"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+    <button class="btn btn-blue" onclick="generateSingleListImage()" style="background: #0ea5e9; font-size: 14px; padding: 12px;">🖼 Скачать фото</button>
+    <button class="btn btn-green" onclick="copyWhatsAppList()" style="font-size: 14px; padding: 12px;">📋 Текст в WhatsApp</button>
   </div>
 
+  <div class="dashboard">
+    <div class="dash-card">
+      <div class="dash-title">Деньги в товаре</div>
+      <div class="dash-value" id="sumBuy">0 ₽</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">В кассе (Наличка)</div>
+      <div class="dash-value green-text" id="sumCash">0 ₽</div>
+    </div>
+    <div class="dash-card" style="grid-column: span 2;">
+      <div class="dash-title">Чистая прибыль (минус расходы)</div>
+      <div class="dash-value green-text" id="sumProfit">0 ₽</div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+    <button class="btn btn-blue" onclick="openImportModal()" style="flex: 1; background: #8b5cf6;">📥 Импорт текста</button>
+    <button class="btn btn-green" onclick="openAddModal()" style="flex: 1;">+ Вручную</button>
+  </div>
+
+  <div class="section-title">📦 В наличии и Брони</div>
+  <div id="stockList" class="loading">Загрузка...</div>
+
+  <!-- СПОЙЛЕР: ПРОДАННЫЕ -->
+  <div style="margin-top: 30px; border-top: 1px solid #334155; padding-top: 15px;">
+    <button class="btn btn-gray" onclick="toggleSold()" style="background: transparent; border: 1px solid #334155; color: #94a3b8;">
+      <span id="soldToggleText">Показать проданные товары</span>
+    </button>
+    <div id="soldWrapper" style="display: none; margin-top: 15px;">
+      <div id="soldList"></div>
+    </div>
+  </div>
 </div>
 
-<script>
-  let currentPriceData = []; 
-  let compareData = { 1: [], 2: [], 3: [], 4: [] };
+<div id="page-store" class="page">
+  <h1 style="font-size: 20px; margin-bottom: 16px;">🛍 Витрина</h1>
+  
+  <div class="action-buttons" style="margin-bottom: 10px;">
+    <button class="btn btn-green" onclick="downloadImage('full')">⬇️ Скачать ВСЮ витрину</button>
+  </div>
+  
+  <div style="display:flex; gap:8px; margin-bottom: 20px;">
+    <button class="btn-sm btn-gray" style="flex:1;" onclick="changeTheme('theme-dark')">Тёмная</button>
+    <button class="btn-sm btn-gray" style="flex:1; background:#fff; color:#000;" onclick="changeTheme('theme-light')">Светлая</button>
+    <button class="btn-sm btn-purple" style="flex:1;" onclick="changeTheme('theme-neon')">Неон</button>
+  </div>
 
-  function extractPriceAndName(line) {
-    // Ищем цену в самом конце строки (может быть через тире или пробел)
-    const priceMatch = line.match(/(\d+)(?!.*\d)/); 
-    if (!priceMatch) return null;
-    const price = parseInt(priceMatch[1]);
-    let name = line.substring(0, priceMatch.index).trim();
-    name = name.replace(/[-–—\s]+$/, '').trim(); // Убираем тире в конце названия
-    return { name: name, price: price };
-  }
-
-  // СПЕЦИАЛЬНЫЙ ПАРСЕР ДЛЯ ДУБАЯ (жестко отсекает всё, кроме айфонов)
-  function parseDubaiText(text) {
-    let parsed = [];
-    let currentModel = "";
-    let currentSim = "eSIM"; // По умолчанию
-    
-    text.split('\n').forEach(line => {
-      line = line.trim();
-      if (!line) return;
+  <div class="preview-container" id="posterContainer">
+    <div class="poster theme-dark" id="posterBody">
+      <h1 class="poster-title">FREE ZONE</h1>
+      <p class="poster-subtitle">ЛУЧШИЕ ЦЕНЫ</p>
+      <div class="poster-list" id="posterList"></div>
       
-      const lowerLine = line.toLowerCase();
+      <div class="poster-footer">
+        <div class="footer-row">
+          <span class="icon">💳</span> Доступна рассрочка
+        </div>
+        <div class="footer-sub">Без банков и переплат</div>
+        
+        <div class="footer-row" style="margin-top: 5px;">
+          <span class="icon">🔥</span> Предзаказ ВЫГОДНЕЕ!
+        </div>
+        <div class="footer-sub">Аванс всего 3000 ₽. Экономьте!</div>
 
-      // Отслеживаем тип симки по заголовкам
-      if (lowerLine.includes("nano sim") || lowerLine.includes("1sim+esim")) {
-          currentSim = "1SIM+eSIM";
-          return;
-      }
-      if (lowerLine.includes("esim") && !line.match(/\d+$/)) {
-          currentSim = "eSIM";
-          return;
-      }
+        <div class="footer-phone">
+          <div style="font-size: 11px; margin-bottom: 4px; opacity: 0.8;">Заказ по телефону / WhatsApp:</div>
+          <div class="phone-number">+7 988 783-66-77</div>
+        </div>
+      </div>
 
-      // ЖЕСТКИЙ ФИЛЬТР: Игнорируем всё, что не похоже на iPhone
-      if (!lowerLine.includes('iph') && !lowerLine.includes('iphone') && !lowerLine.includes('pro')) {
-          // Если это заголовок модели, запоминаем его
-          if (line.match(/(GB|TB)/i) && !line.match(/\s+\d+$/)) {
-              currentModel = line;
-          }
-          return; // Всё остальное (часы, очки, ремешки) пропускаем
-      }
+    </div>
+  </div>
+</div>
 
-      // Если строка содержит GB/TB и не содержит цену — это заголовок модели
-      if (line.match(/(GB|TB)/i) && !line.match(/\s+\d+$/)) {
-        currentModel = line;
-        return;
-      }
+<!-- СКРЫТЫЙ БЛОК ДЛЯ ГЕНЕРАЦИИ СПИСКА БЕЗ КОЛИЧЕСТВА -->
+<div id="singleItemContainer" style="position: absolute; left: -9999px; top: 0;">
+  <div class="poster theme-dark" id="singlePosterBody">
+    <h1 class="poster-title">FREE ZONE</h1>
+    <p class="poster-subtitle">АКТУАЛЬНОЕ НАЛИЧИЕ</p>
+    <div class="poster-list" id="singlePosterList"></div>
+    
+    <div class="poster-footer">
+      <div class="footer-row">
+        <span class="icon">💳</span> Доступна рассрочка
+      </div>
+      <div class="footer-sub">Без банков и переплат</div>
+      
+      <div class="footer-row" style="margin-top: 5px;">
+        <span class="icon">🔥</span> Предзаказ ВЫГОДНЕЕ!
+      </div>
+      <div class="footer-sub">Аванс всего 3000 ₽. Экономьте!</div>
 
-      // Если есть цена, и мы знаем модель — добавляем
-      const data = extractPriceAndName(line);
-      if (data && currentModel) {
-        parsed.push({ 
-            name: `${currentModel} ${data.name}`, 
-            price: data.price,
-            simType: currentSim
-        });
-      }
+      <div class="footer-phone">
+        <div style="font-size: 11px; margin-bottom: 4px; opacity: 0.8;">Заказ по телефону / WhatsApp:</div>
+        <div class="phone-number">+7 988 783-66-77</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchTab('deals')" id="nav-deals">📊 Склад</div>
+  <div class="nav-item" onclick="switchTab('store')" id="nav-store">🛍 Витрина</div>
+</div>
+
+<!-- МОДАЛКА: ДОБАВИТЬ -->
+<div class="modal" id="addModal">
+  <div class="modal-content">
+    <h2>Добавить товар</h2>
+    <form id="addForm">
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Категория</label>
+        <select name="category" id="addCategory" required>
+          <option value="iPhone">iPhone</option>
+          <option value="PlayStation">PlayStation</option>
+          <option value="Ноутбук">Ноутбук</option>
+          <option value="Телевизор">Телевизор</option>
+          <option value="NEW">+ Создать новую категорию...</option>
+        </select>
+      </div>
+
+      <div class="input-group" style="margin-bottom:10px; display:none;" id="newCategoryField">
+        <input name="newCategoryName" placeholder="Название (Наушники, ПК, Часы)" required>
+      </div>
+
+      <div id="iphoneFields">
+        <div class="input-group" style="margin-bottom:10px;">
+          <input name="iphoneModel" placeholder="Модель iPhone" required>
+        </div>
+      </div>
+
+      <div id="otherFields" style="display:none;">
+        <div class="input-group" style="margin-bottom:10px;">
+          <input name="otherModel" placeholder="Модель / Название товара" required>
+        </div>
+      </div>
+
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Серийный номер (IMEI)</label>
+        <input name="imei" placeholder="Введите IMEI или S/N">
+      </div>
+
+      <div class="input-grid" style="margin-bottom:10px;">
+        <div class="input-group">
+          <input name="buy" type="number" required placeholder="Закупка (₽)">
+        </div>
+        <div class="input-group">
+          <input name="qty" type="number" value="1" required placeholder="Кол-во">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top: 20px;">
+        <button type="button" class="btn btn-gray" onclick="closeAddModal()">Отмена</button>
+        <button type="submit" class="btn btn-green">Добавить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- МОДАЛКА: РЕДАКТИРОВАТЬ ТОВАР -->
+<div class="modal" id="editModal">
+  <div class="modal-content">
+    <h2>Редактировать</h2>
+    <form id="editForm">
+      <input type="hidden" name="dealKey" id="editKey">
+      
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Название / Модель</label>
+        <input name="model" id="editModel" required>
+      </div>
+
+      <div class="input-grid" style="margin-bottom:10px;">
+        <div class="input-group">
+          <label>Память (если есть)</label>
+          <input name="storage" id="editStorage">
+        </div>
+        <div class="input-group">
+          <label>Цвет (если есть)</label>
+          <input name="color" id="editColor">
+        </div>
+      </div>
+
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Серийный номер (IMEI)</label>
+        <input name="imei" id="editImei" placeholder="IMEI или S/N">
+      </div>
+
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Цена закупки (₽)</label>
+        <input name="buy" id="editBuy" type="number" required>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top: 20px;">
+        <button type="button" class="btn btn-gray" onclick="closeEditModal()">Отмена</button>
+        <button type="submit" class="btn btn-green">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ОСТАЛЬНЫЕ МОДАЛКИ -->
+<div class="modal" id="expenseModal"><div class="modal-content"><h2>Расход</h2><form id="expenseForm"><div class="input-group" style="margin-bottom:10px;"><input name="amount" type="number" required placeholder="Сумма (₽)"></div><div class="input-group" style="margin-bottom:10px;"><input name="reason" required placeholder="На что?"></div><div style="display:flex; gap:10px;"><button type="button" class="btn btn-gray" onclick="closeExpenseModal()">Отмена</button><button type="submit" class="btn btn-red">Списать</button></div></form></div></div>
+
+<div class="modal" id="bookModal"><div class="modal-content"><h2>Бронь</h2><form id="bookForm"><input type="hidden" name="dealKey" id="bookKey"><div class="input-group" style="margin-bottom:10px;"><input name="clientName" required placeholder="Имя"></div><div class="input-group" style="margin-bottom:10px;"><input name="clientPhone" required placeholder="Телефон"></div><div style="display:flex; gap:10px;"><button type="button" class="btn btn-gray" onclick="closeBookModal()">Отмена</button><button type="submit" class="btn btn-yellow">Забронировать</button></div></form></div></div>
+
+<div class="modal" id="priceModal"><div class="modal-content"><h2>Цена на витрину</h2><form id="priceForm"><input type="hidden" name="dealKey" id="priceKey"><div class="input-group" style="margin-bottom:10px;"><input name="storePrice" type="number" required style="color:#4ade80;" placeholder="Ваша цена (₽)"></div><div style="display:flex; gap:10px;"><button type="button" class="btn btn-gray" onclick="closePriceModal()">Отмена</button><button type="submit" class="btn btn-green">ОК</button></div></form></div></div>
+
+<div class="modal" id="sellModal">
+  <div class="modal-content">
+    <h2>Продажа</h2>
+    <form id="sellForm">
+      <input type="hidden" name="dealKey" id="sellKey">
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Цена продажи (₽)</label>
+        <input name="sellPrice" type="number" required placeholder="Цена (₽)" style="color:#4ade80; font-size:16px;">
+      </div>
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Способ оплаты</label>
+        <select name="paymentMethod" required id="payMethodSelect"><option value="Наличные">Наличные</option><option value="Перевод">Перевод</option></select>
+      </div>
+      
+      <div class="input-grid" style="margin-bottom:10px;">
+        <div class="input-group">
+          <label>Имя покупателя</label>
+          <input name="buyerName" placeholder="Имя">
+        </div>
+        <div class="input-group">
+          <label>Телефон</label>
+          <input name="buyerPhone" placeholder="+7...">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top: 20px;">
+        <button type="button" class="btn btn-gray" onclick="closeSellModal()">Отмена</button>
+        <button type="submit" class="btn btn-green">Продать</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="editPayModal">
+  <div class="modal-content">
+    <h2>Изменить оплату</h2>
+    <form id="editPayForm">
+      <input type="hidden" name="dealKey" id="editPayKey">
+      <div class="input-group" style="margin-bottom:10px;">
+        <label>Способ оплаты</label>
+        <select name="newPayMethod" id="editPaySelect">
+          <option value="Наличные">Наличные</option>
+          <option value="Перевод">Перевод</option>
+        </select>
+      </div>
+      <div class="input-group" style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" name="moneyReceived" id="editPayReceived" style="width:20px; height:20px;">
+        <label for="editPayReceived" style="margin:0; font-size:14px; color:#fff;">Деньги уже в кассе</label>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-gray" onclick="closeEditPayModal()">Отмена</button>
+        <button type="submit" class="btn btn-green">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="backupModal">
+  <div class="modal-content">
+    <h2>Управление базой</h2>
+    <p style="font-size:12px; color:#aaa; margin-bottom:20px;">Скачайте файл, чтобы сохранить все данные.</p>
+    <button class="btn btn-green" onclick="downloadBackup()" style="margin-bottom:10px;">⬇️ Скачать базу (JSON)</button>
+    <button class="btn btn-blue" onclick="document.getElementById('fileInput').click()">⬆️ Загрузить базу</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="uploadBackup(event)">
+    <button class="btn btn-gray" onclick="closeBackupModal()" style="margin-top:20px;">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal" id="importModal">
+  <div class="modal-content">
+    <h2>📥 Импорт из текста</h2>
+    <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">Вставьте текст. Программа поймёт даже сложный формат Дубая.</p>
+    <div class="input-group" style="margin-bottom:10px;">
+      <textarea id="importText" rows="8" placeholder="18 Pro 256 Burgundy - 106000 - 1 шт"></textarea>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button type="button" class="btn btn-gray" onclick="closeImportModal()">Отмена</button>
+      <button type="button" class="btn btn-blue" onclick="processImport()" style="background: #8b5cf6;">Распознать</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+  const firebaseConfig = { databaseURL: "https://iphone-sklad-default-rtdb.firebaseio.com/" };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let deals = {}; let expenses = {}; let customCategories = [];
+  let isSoldVisible = false;
+
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    document.getElementById('nav-' + tab).classList.add('active');
+  }
+
+  window.toggleSold = function() {
+    isSoldVisible = !isSoldVisible;
+    document.getElementById('soldWrapper').style.display = isSoldVisible ? 'block' : 'none';
+    document.getElementById('soldToggleText').textContent = isSoldVisible ? 'Скрыть проданные товары' : 'Показать проданные товары';
+  }
+
+  window.changeTheme = function(themeName) {
+    document.getElementById('posterBody').className = `poster ${themeName}`;
+  }
+
+  onValue(ref(db, 'deals'), (snap) => { deals = snap.val() || {}; renderAll(); });
+  onValue(ref(db, 'expenses'), (snap) => { expenses = snap.val() || {}; renderAll(); });
+  onValue(ref(db, 'customCategories'), (snap) => { 
+    customCategories = snap.val() || []; 
+    updateCategoryList();
+  });
+
+  window.renderAll = function() { renderDeals(); renderPoster(); }
+
+  window.updateCategoryList = function() {
+    const select = document.getElementById('addCategory');
+    select.innerHTML = `
+      <option value="iPhone">iPhone</option>
+      <option value="PlayStation">PlayStation</option>
+      <option value="Ноутбук">Ноутбук</option>
+      <option value="Телевизор">Телевизор</option>
+    `;
+    if (Array.isArray(customCategories)) {
+      customCategories.forEach(cat => {
+        if(cat) select.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+    }
+    select.innerHTML += `<option value="NEW">+ Создать новую категорию...</option>`;
+  }
+
+  document.getElementById('addCategory').addEventListener('change', function() {
+    const newCatField = document.getElementById('newCategoryField');
+    const iphoneFields = document.getElementById('iphoneFields');
+    const otherFields = document.getElementById('otherFields');
+
+    if (this.value === 'NEW') {
+      newCatField.style.display = 'block';
+      iphoneFields.style.display = 'none';
+      otherFields.style.display = 'block';
+    } else if (this.value === 'iPhone') {
+      newCatField.style.display = 'none';
+      iphoneFields.style.display = 'block';
+      otherFields.style.display = 'none';
+    } else {
+      newCatField.style.display = 'none';
+      iphoneFields.style.display = 'none';
+      otherFields.style.display = 'block';
+    }
+  });
+
+  window.renderDeals = function() {
+    let sumBuy = 0, sumCash = 0, totalProfit = 0, totalExpenses = 0;
+    let categoriesStock = {}, soldHtml = '';
+
+    Object.values(expenses).forEach(e => totalExpenses += e.amount);
+
+    const sortedKeys = Object.keys(deals).sort((a, b) => {
+      const catA = deals[a].category === 'iPhone' ? 1 : 0;
+      const catB = deals[b].category === 'iPhone' ? 1 : 0;
+      return catB - catA; 
     });
-    return parsed;
-  }
 
-  // ПАРСЕР ДЛЯ ПОСТАВЩИКОВ 1, 2, 3
-  function parseSupplierText(text) {
-    let parsed = [];
-    let currentSim = "STANDARD"; 
-
-    text.split('\n').forEach(line => {
-      line = line.trim();
-      if (!line) return;
-
-      const lowerLine = line.toLowerCase();
-
-      // Отслеживаем глобальные заголовки SIM
-      if (!line.match(/\d+$/)) {
-          if (lowerLine.includes("esim") && !lowerLine.includes("1sim") && !lowerLine.includes("+")) {
-              currentSim = "ESIM";
-              return;
-          } else if (lowerLine.includes("1sim") || lowerLine.includes("+") || lowerLine.includes("nano")) {
-              currentSim = "1SIM+eSIM";
-              return;
-          }
+    sortedKeys.forEach((key) => {
+      const it = deals[key];
+      const profit = (it.sell || 0) - (it.buy || 0);
+      
+      if (it.status === 'in' || it.status === 'booked') sumBuy += it.buy || 0;
+      if (it.status === 'sold') {
+        totalProfit += profit;
+        if (it.paymentMethod === 'Наличные' || it.paymentReceived) sumCash += it.sell || 0;
       }
 
-      const data = extractPriceAndName(line);
-      if (data) {
-        // Определяем симку для конкретной строки, если она указана
-        let lineSim = currentSim;
-        if (lowerLine.includes('(esim)')) lineSim = "ESIM";
-        if (lowerLine.includes('(1sim+esim)') || lowerLine.includes('(1-sim+esim)')) lineSim = "1SIM+eSIM";
+      let title = it.model || 'Без названия';
+      if (it.category === 'iPhone') title += ` <span style="font-size:12px; color:#aaa;">${it.storage || ''} ${it.color || ''}</span>`;
+      
+      let imeiText = it.imei ? ` • IMEI: ${it.imei}` : '';
 
-        parsed.push({ name: data.name, price: data.price, simType: lineSim });
-      }
-    });
-    return parsed;
-  }
+      if (it.status === 'in' || it.status === 'booked') {
+        if (!categoriesStock[it.category]) categoriesStock[it.category] = '';
+        let statusBadge = it.status === 'booked' ? '<span class="status st-booked">Забронирован</span>' : '<span class="status st-in">В наличии</span>';
+        let bookInfo = it.status === 'booked' ? `<div style="font-size:11px; color:var(--yellow); margin-top:4px;">Бронь: ${it.bookName} (${it.bookPhone})</div>` : '';
+        let storePriceHtml = it.storePrice ? `<div style="font-size:12px; color:#4ade80; font-weight:700; margin-top:4px;">На витрине: ${it.storePrice.toLocaleString('ru-RU')} ₽</div>` : '';
 
-  function switchMainTab(tab) {
-    document.getElementById('tab-price').classList.toggle('active', tab === 'price');
-    document.getElementById('tab-compare').classList.toggle('active', tab === 'compare');
-    document.getElementById('view-price').style.display = (tab === 'price') ? 'block' : 'none';
-    document.getElementById('view-compare').style.display = (tab === 'compare') ? 'block' : 'none';
-  }
-
-  // ================= ВКЛАДКА 1 =================
-  function clearPriceList() {
-    document.getElementById('input-text').value = '';
-    document.getElementById('result-list').innerHTML = '<div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div>';
-    currentPriceData = [];
-  }
-
-  function processList() {
-    const rawText = document.getElementById('input-text').value;
-    if (!rawText.trim()) return alert("Сначала вставьте список!");
-    const lines = rawText.split('\n');
-    currentPriceData = [];
-    lines.forEach(line => {
-      line = line.trim();
-      if (!line || line.toLowerCase().includes('предзаказ') || line.toLowerCase().includes('выдача на')) return;
-      const parsed = extractPriceAndName(line);
-      if (parsed) currentPriceData.push({ name: parsed.name, originalPrice: parsed.price, manualMarkup: 0 });
-    });
-    renderPriceList();
-  }
-
-  function renderPriceList() {
-    const container = document.getElementById('result-list');
-    if (currentPriceData.length === 0) return;
-    let html = '';
-    const formatPrice = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    currentPriceData.forEach((item, index) => {
-        const finalPrice = item.originalPrice + item.manualMarkup;
-        html += `
-          <div class="card">
-            <div class="card-top">
-              <div class="info"><div class="title">${item.name}</div></div>
-              <div class="price">${formatPrice(finalPrice)} ₽</div>
-            </div>
-            <div class="manual-markup hide-on-capture">
-                <span>Наценка: +</span>
-                <input type="number" value="${item.manualMarkup}" onchange="updatePriceMarkup(${index}, this.value)"> ₽
+        categoriesStock[it.category] += `
+        <div class="deal-card">
+          <div class="deal-header">
+            <div><div class="deal-title">${title}</div><div class="deal-imei">${it.category === 'iPhone' ? (it.sim || '') : it.category}${imeiText}</div>${bookInfo}${storePriceHtml}</div>
+            <div class="deal-price"><div class="deal-buy">Закупка</div><div style="font-size:15px; font-weight:700; color:#f5c76a;">${(it.buy || 0).toLocaleString('ru-RU')} ₽</div></div>
+          </div>
+          <div class="deal-footer">
+            <div>${statusBadge}</div>
+            <div class="action-buttons-row">
+              ${it.status === 'in' ? `<button class="btn-sm btn-yellow" onclick="openBookModal('${key}')">Бронь</button>` : ''}
+              <button class="btn-sm btn-gray" onclick="openEditModal('${key}')">✏️ Изменить</button>
+              <button class="btn-sm btn-outline" onclick="openPriceModal('${key}')">Цена</button>
+              <button class="btn-sm btn-green" onclick="openSellModal('${key}')">Продать</button>
             </div>
           </div>
-        `;
-    });
-    container.innerHTML = html;
-  }
-
-  function updatePriceMarkup(index, value) {
-    currentPriceData[index].manualMarkup = parseInt(value) || 0;
-    renderPriceList();
-  }
-
-  function downloadImage() {
-    if (currentPriceData.length === 0) return alert("Нет данных");
-    document.querySelectorAll('.hide-on-capture').forEach(el => el.style.display = 'none');
-    html2canvas(document.getElementById('capture-area'), { scale: 2, backgroundColor: "#0f0f13", useCORS: true }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'prays.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        document.querySelectorAll('.hide-on-capture').forEach(el => el.style.display = 'flex');
-    });
-  }
-
-  function sendToWhatsApp() {
-    if (currentPriceData.length === 0) return alert("Нет данных");
-    const formatPrice = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    let message = "ПРЕДЗАКАЗ ДО 17:00\nВЫДАЧА НА СУББОТУ\n\n";
-    currentPriceData.forEach(item => { message += `${item.name} — ${formatPrice(item.originalPrice + item.manualMarkup)}\n`; });
-    message += "\n💳 Доступна рассрочка\n🔥 Предзаказ ВЫГОДНЕЕ!\n\nЗаказ: +7 988 783-66-77";
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-  }
-
-  // ================= ВКЛАДКА 2: СРАВНЕНИЕ =================
-  function clearSupplier(num) {
-    document.getElementById('sup' + num).value = '';
-    compareData[num] = [];
-    document.getElementById('compare-results').innerHTML = '';
-  }
-
-  function runComparison() {
-    compareData[1] = parseSupplierText(document.getElementById('sup1').value);
-    compareData[2] = parseSupplierText(document.getElementById('sup2').value);
-    compareData[3] = parseSupplierText(document.getElementById('sup3').value);
-    compareData[4] = parseDubaiText(document.getElementById('sup4').value);
-
-    const usdRate = parseFloat(document.getElementById('usd-rate').value) || 85;
-
-    // НОРМАЛИЗАЦИЯ (приведение к единому ключу)
-    function analyzeProductName(name) {
-        let clean = name.toLowerCase();
+        </div>`;
+      } else {
+        let payStatusText = it.paymentMethod;
+        if (it.paymentMethod === 'Перевод' && !it.paymentReceived) payStatusText = 'Ждёт перевод';
         
-        // 1. Транслит
-        const ruToEn = { 'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'e', 'ж':'zh', 'з':'z', 'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o', 'п':'p', 'р':'r', 'с':'s', 'т':'t', 'у':'u', 'ф':'f', 'х':'h', 'ц':'ts', 'ч':'ch', 'ш':'sh', 'щ':'sch', 'ъ':'', 'ы':'y', 'ь':'', 'э':'e', 'ю':'yu', 'я':'ya' };
-        clean = clean.replace(/[а-яё]/g, char => ruToEn[char] || char);
+        let buyerInfo = '';
+        if(it.buyerName) buyerInfo += `Покупатель: ${it.buyerName}`;
+        if(it.buyerPhone) buyerInfo += ` (${it.buyerPhone})`;
 
-        // 2. Память
-        let memory = '';
-        const memMatch = clean.match(/\b(64|128|256|512|1024|1tb|2tb)\b/i);
-        if (memMatch) {
-            memory = memMatch[1].toUpperCase();
-            if (memory === '1024') memory = '1TB';
-            clean = clean.replace(memMatch[0], ''); 
-        }
+        soldHtml += `
+        <div class="deal-card" style="opacity: 0.8;">
+          <div class="deal-header">
+            <div><div class="deal-title">${title}</div><div class="deal-imei">${it.category === 'iPhone' ? (it.sim || '') : it.category}${imeiText}</div><div style="font-size:10px; color:#64748b;">Оплата: ${payStatusText}</div></div>
+            <div class="deal-price"><div class="deal-buy">Продажа: ${(it.sell || 0).toLocaleString('ru-RU')} ₽</div><div class="deal-profit ${profit >= 0 ? 'green-text' : 'red-text'}">${profit >= 0 ? '+' : ''}${profit.toLocaleString('ru-RU')} ₽</div></div>
+          </div>
+          <div class="deal-footer">
+            <div>
+              <span class="status st-sold">Продан</span>
+              ${it.paymentMethod === 'Перевод' && !it.paymentReceived ? '<span class="status" style="background:#b45309; color:#fde047; margin-left:4px;">Ждёт перевод</span>' : ''}
+              <div style="font-size:10px; color:#64748b; margin-top:4px;">${buyerInfo}</div>
+            </div>
+            <div class="action-buttons-row">
+              <button class="btn-sm btn-blue" onclick="openEditPayModal('${key}')">✏️ Изменить</button>
+              <button class="btn-sm btn-red" onclick="delDeal('${key}')">Удалить</button>
+            </div>
+          </div>
+        </div>`;
+      }
+    });
 
-        // 3. Определяем SIM по тексту (если он есть в названии)
-        let simType = '';
-        if (clean.includes('esim') || clean.includes('e sim')) simType = 'ESIM';
-        if (clean.includes('1sim') || clean.includes('+') || clean.includes('1-sim')) simType = '1SIM+eSIM';
-        clean = clean.replace(/\b(esim|e sim|sim|1sim|2sim|physical|dual|физ|1-sim)\b/g, '');
-
-        // 4. Цвета
-        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'glacier', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'bronze', 'alm', 'burgunby', 'glacir', 'burgun', 'make'];
-        colors.forEach(color => { clean = clean.replace(new RegExp(color, 'g'), ''); });
-
-        // 5. Очистка мусора
-        clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
-        clean = clean.replace(/[^a-z0-9\s]/g, ' ');
-        clean = clean.replace(/\s+/g, ' ').trim();
-
-        // Заменяем русские буквы в "макс" на английские для единообразия
-        clean = clean.replace(/\bмакс\b/g, 'max');
-
-        return `${clean} | ${memory || 'NOMEM'}`;
+    let stockHtml = '';
+    const catOrder = ['iPhone', 'PlayStation', 'Ноутбук', 'Телевизор'];
+    catOrder.forEach(cat => {
+      if (categoriesStock[cat]) {
+        stockHtml += `<div class="section-title" style="margin-top:15px; color:#fff;">📱 ${cat}</div>${categoriesStock[cat]}`;
+        delete categoriesStock[cat];
+      }
+    });
+    for (let cat in categoriesStock) {
+      stockHtml += `<div class="section-title" style="margin-top:15px; color:#fff;">📱 ${cat}</div>${categoriesStock[cat]}`;
     }
 
-    let allProducts = {};
+    if(!stockHtml) stockHtml = '<div style="text-align:center; color:#64748b; font-size:12px; padding:10px;">Склад пуст</div>';
+    if(!soldHtml) soldHtml = '<div style="text-align:center; color:#64748b; font-size:12px; padding:10px;">Нет проданных</div>';
+
+    document.getElementById('stockList').innerHTML = stockHtml;
+    document.getElementById('soldList').innerHTML = soldHtml;
+    document.getElementById('sumBuy').textContent = sumBuy.toLocaleString('ru-RU') + ' ₽';
+    document.getElementById('sumCash').textContent = sumCash.toLocaleString('ru-RU') + ' ₽';
     
-    for (let i = 1; i <= 4; i++) {
-        compareData[i].forEach(item => {
-            const key = analyzeProductName(item.name);
-            if (!key || key.includes('NOMEM')) return; 
+    const netProfit = totalProfit - totalExpenses;
+    const pEl = document.getElementById('sumProfit');
+    pEl.textContent = (netProfit >= 0 ? '+' : '') + netProfit.toLocaleString('ru-RU') + ' ₽';
+    pEl.className = 'dash-value ' + (netProfit >= 0 ? 'green-text' : 'red-text');
+  }
 
-            if (!allProducts[key]) {
-                allProducts[key] = { 
-                    displayName: item.name, 
-                    memory: key.split('|')[1].trim(),
-                    prices: {1: '-', 2: '-', 3: '-', 4: '-'} 
-                };
-            }
-            
-            let finalPrice = item.price;
-            // Для Дубая пересчитываем в рубли по курсу
-            if (i === 4) finalPrice = Math.round((item.price / 3.65) * usdRate);
+  window.renderPoster = function() {
+    const listWrap = document.getElementById('posterList');
+    let groupedItems = {};
+    
+    Object.keys(deals).forEach(key => {
+      const item = deals[key];
+      if (item.status === 'in') {
+        const groupKey = `${item.model}_${item.storage || ''}_${item.color || ''}`;
+        const desc = [item.storage, item.sim, item.color].filter(Boolean).join(' • ');
+        const price = item.storePrice || item.buy;
 
-            if (allProducts[key].prices[i] === '-' || finalPrice < allProducts[key].prices[i]) {
-                allProducts[key].prices[i] = finalPrice;
-            }
-        });
-    }
-
-    let html = '';
-    const formatPrice = (num) => num === '-' ? '-' : num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    const sortedKeys = Object.keys(allProducts).sort();
-
-    sortedKeys.forEach(key => {
-        const prod = allProducts[key];
-        
-        let validPrices = [];
-        for(let i=1; i<=4; i++) {
-            if (prod.prices[i] !== '-') validPrices.push(prod.prices[i]);
+        if (!groupedItems[groupKey]) {
+          groupedItems[groupKey] = { model: item.model, desc: desc || item.category, count: 1, price: price, oldPrice: item.oldPrice || null };
+        } else {
+          groupedItems[groupKey].count++;
+          if (price < groupedItems[groupKey].price) groupedItems[groupKey].price = price;
         }
-
-        let minPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
-        let maxPrice = validPrices.length > 1 ? Math.max(...validPrices) : null; 
-
-        let memTag = `<span class="tag">${prod.memory}</span>`;
-
-        html += `
-          <div class="compare-row">
-            <div class="compare-title">${prod.displayName}</div>
-            <div class="compare-tags">${memTag}</div>
-            <div class="compare-grid">
-        `;
-
-        for(let i=1; i<=4; i++) {
-            let price = prod.prices[i];
-            let cellClass = '';
-            
-            if (price !== '-') {
-                if (price === minPrice) cellClass = 'price-best';
-                else if (price === maxPrice) cellClass = 'price-worst';
-            }
-
-            let label = (i === 4) ? 'ДУБАЙ' : `ПОСТ ${i}`;
-            let labelColor = (i === 4) ? 'color:#e0a800;' : '';
-
-            html += `
-              <div class="compare-item ${cellClass}">
-                <span class="compare-label" style="${labelColor}">${label}</span>
-                ${formatPrice(price)} ₽
-              </div>
-            `;
-        }
-
-        html += `</div></div>`;
+      }
+    });
+    
+    let posterHtml = '';
+    let keys = Object.keys(groupedItems).sort((a, b) => {
+      const isA = groupedItems[a].model.includes('iPhone') ? 1 : 0;
+      const isB = groupedItems[b].model.includes('iPhone') ? 1 : 0;
+      return isB - isA;
     });
 
-    document.getElementById('compare-results').innerHTML = html || '<div style="text-align:center; color:#666;">Нет данных для сравнения.</div>';
+    keys.forEach(key => {
+      const item = groupedItems[key];
+      const hasDiscount = item.oldPrice && Number(item.oldPrice) > Number(item.price);
+      const discountPercent = hasDiscount ? Math.round((1 - (Number(item.price) / Number(item.oldPrice))) * 100) : 0;
+      posterHtml += `
+      <div class="poster-item">
+        <div class="p-info"><div class="p-model">${item.model} <span class="p-qty">${item.count} шт</span></div><div class="p-desc">${item.desc}</div></div>
+        <div class="p-price-wrap">${hasDiscount ? `<div class="p-old-price">${Number(item.oldPrice).toLocaleString('ru-RU')} ₽</div>` : ''}<div class="p-price">${Number(item.price).toLocaleString('ru-RU')} ₽</div>${hasDiscount ? `<div class="p-discount">-${discountPercent}%</div>` : ''}</div>
+      </div>`;
+    });
+    listWrap.innerHTML = posterHtml || '<p style="font-size:12px; text-align:center; opacity:0.6;">Нет товаров</p>';
+  }
+
+  // БЭКАП
+  window.openBackupModal = function() { document.getElementById('backupModal').classList.add('active'); }
+  window.closeBackupModal = function() { document.getElementById('backupModal').classList.remove('active'); }
+
+  window.downloadBackup = function() {
+    const data = { deals, expenses, customCategories };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `backup_sklad_${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  window.uploadBackup = function(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.deals) set(ref(db, 'deals'), data.deals);
+        if (data.expenses) set(ref(db, 'expenses'), data.expenses);
+        if (data.customCategories) set(ref(db, 'customCategories'), data.customCategories);
+        alert('База успешно восстановлена!'); closeBackupModal();
+      } catch (err) { alert('Ошибка чтения файла.'); }
+    };
+    reader.readAsText(file);
+  }
+
+  // РЕДАКТИРОВАНИЕ ТОВАРА
+  window.openEditModal = function(key) {
+    const code = prompt('Введите пароль для изменения:');
+    if (code !== '0537') {
+      if (code !== null) alert('Неверный пароль!');
+      return;
+    }
+    
+    const d = deals[key];
+    document.getElementById('editKey').value = key;
+    document.getElementById('editModel').value = d.model || '';
+    document.getElementById('editStorage').value = d.storage || '';
+    document.getElementById('editColor').value = d.color || '';
+    document.getElementById('editImei').value = d.imei || '';
+    document.getElementById('editBuy').value = d.buy || 0;
+    
+    document.getElementById('editModal').classList.add('active');
+  }
+  window.closeEditModal = function() { document.getElementById('editModal').classList.remove('active'); }
+  
+  document.getElementById('editForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const key = f.get('dealKey');
+    
+    update(ref(db, 'deals/' + key), {
+      model: f.get('model'),
+      storage: f.get('storage'),
+      color: f.get('color'),
+      imei: f.get('imei'),
+      buy: Number(f.get('buy'))
+    });
+    
+    closeEditModal();
+  });
+
+  // ОСТАЛЬНЫЕ ФУНКЦИИ
+  window.openEditPayModal = function(key) {
+    document.getElementById('editPayKey').value = key;
+    const d = deals[key];
+    document.getElementById('editPaySelect').value = d.paymentMethod || 'Наличные';
+    document.getElementById('editPayReceived').checked = d.paymentReceived || false;
+    document.getElementById('editPayModal').classList.add('active');
+  }
+  window.closeEditPayModal = function() { document.getElementById('editPayModal').classList.remove('active'); }
+  document.getElementById('editPayForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const key = document.getElementById('editPayKey').value;
+    const newPay = document.getElementById('editPaySelect').value;
+    const isReceived = document.getElementById('editPayReceived').checked;
+    update(ref(db, 'deals/' + key), { paymentMethod: newPay, paymentReceived: isReceived });
+    closeEditPayModal();
+  });
+
+  window.delDeal = function(key) { 
+    const code = prompt('Введите код для удаления (0537):');
+    if (code === '0537') remove(ref(db, 'deals/' + key)); 
+    else if (code !== null) alert('Неверный код!');
+  }
+
+  window.openBookModal = function(key) { document.getElementById('bookKey').value = key; document.getElementById('bookForm').reset(); document.getElementById('bookModal').classList.add('active'); }
+  window.closeBookModal = function() { document.getElementById('bookModal').classList.remove('active'); }
+  document.getElementById('bookForm').addEventListener('submit', function(e) {
+    e.preventDefault(); const f = new FormData(e.target);
+    update(ref(db, 'deals/' + f.get('dealKey')), { status: 'booked', bookName: f.get('clientName'), bookPhone: f.get('clientPhone') });
+    closeBookModal();
+  });
+
+  window.openSellModal = function(key) { document.getElementById('sellKey').value = key; document.getElementById('sellForm').reset(); document.getElementById('sellModal').classList.add('active'); }
+  window.closeSellModal = function() { document.getElementById('sellModal').classList.remove('active'); }
+  document.getElementById('sellForm').addEventListener('submit', function(e) {
+    e.preventDefault(); const f = new FormData(e.target);
+    update(ref(db, 'deals/' + f.get('dealKey')), {
+      sell: Number(f.get('sellPrice')), 
+      buyerName: f.get('buyerName'),
+      buyerPhone: f.get('buyerPhone'),
+      paymentMethod: f.get('paymentMethod'),
+      paymentReceived: f.get('paymentMethod') === 'Наличные', status: 'sold'
+    });
+    closeSellModal();
+  });
+
+  window.openPriceModal = function(key) { document.getElementById('priceKey').value = key; document.querySelector('input[name="storePrice"]').value = deals[key].storePrice || Math.round(deals[key].buy * 1.1); document.getElementById('priceModal').classList.add('active'); }
+  window.closePriceModal = function() { document.getElementById('priceModal').classList.remove('active'); }
+  document.getElementById('priceForm').addEventListener('submit', function(e) {
+    e.preventDefault(); const key = document.getElementById('priceKey').value;
+    const newPrice = Number(document.querySelector('input[name="storePrice"]').value);
+    const oldPrice = deals[key].storePrice; let upd = { storePrice: newPrice };
+    if (oldPrice && newPrice < oldPrice) upd.oldPrice = oldPrice;
+    update(ref(db, 'deals/' + key), upd); closePriceModal();
+  });
+
+  window.openExpenseModal = function() { document.getElementById('expenseModal').classList.add('active'); }
+  window.closeExpenseModal = function() { document.getElementById('expenseModal').classList.remove('active'); }
+  document.getElementById('expenseForm').addEventListener('submit', function(e) {
+    e.preventDefault(); const f = new FormData(e.target);
+    push(ref(db, 'expenses'), { amount: Number(f.get('amount')), reason: f.get('reason') }); closeExpenseModal(); e.target.reset();
+  });
+
+  window.openAddModal = function() { document.getElementById('addModal').classList.add('active'); document.getElementById('addCategory').value = 'iPhone'; document.getElementById('addCategory').dispatchEvent(new Event('change')); }
+  window.closeAddModal = function() { document.getElementById('addModal').classList.remove('active'); document.getElementById('addForm').reset(); }
+  
+  document.getElementById('addForm').addEventListener('submit', function(e) {
+    e.preventDefault(); const f = new FormData(e.target);
+    let cat = f.get('category'); const qty = Number(f.get('qty')) || 1;
+    
+    if (cat === 'NEW') {
+      const newName = f.get('newCategoryName').trim();
+      if (newName) {
+        cat = newName;
+        let currentCats = Array.isArray(customCategories) ? customCategories : [];
+        if (!currentCats.includes(newName)) {
+          currentCats.push(newName);
+          set(ref(db, 'customCategories'), currentCats);
+        }
+      } else {
+        cat = 'Другое';
+      }
+    }
+
+    let data = { category: cat, buy: Number(f.get('buy')), status: 'in', storePrice: 0, imei: f.get('imei') };
+    
+    if (cat === 'iPhone') {
+      data.model = f.get('iphoneModel');
+      data.storage = f.get('storage');
+      data.color = f.get('color');
+    } else {
+      data.model = f.get('otherModel') || cat;
+    }
+    
+    for (let i = 0; i < qty; i++) set(push(ref(db, 'deals')), data);
+    closeAddModal();
+  });
+
+  window.openImportModal = function() { document.getElementById('importModal').classList.add('active'); }
+  window.closeImportModal = function() { document.getElementById('importModal').classList.remove('active'); document.getElementById('importText').value = ''; }
+  
+  // УМНЫЙ ПАРСЕР (Понимает формат Дубая)
+  window.processImport = function() {
+    const text = document.getElementById('importText').value;
+    if (!text.trim()) return alert('Вставьте текст');
+    
+    let addedCount = 0;
+    let currentModel = "";
+    let currentStorage = "";
+    
+    const lines = text.split('\n');
+    lines.forEach(rawLine => {
+      let line = rawLine.trim();
+      if (!line) return;
+
+      // 1. Ищем строку с моделью (напр. "Iph 18 Pro 256GB" или "18 Pro Max 512GB")
+      const modelMatch = line.match(/(?:Iph\s*)?(1[5-8]|11|12|13|14)(?:\s+Pro Max|\s+Pro|\s+Plus)?/i);
+      if (modelMatch && line.toLowerCase().includes('iph') || line.toLowerCase().includes('pro')) {
+         // Если нашли новую модель, обновляем текущую модель
+         let m = modelMatch[0].replace(/Iph\s*/i, 'iPhone ');
+         currentModel = m.charAt(0).toUpperCase() + m.slice(1);
+         
+         const storageMatch = line.match(/(64|128|256|512|1024|1TB|2TB)/i);
+         if (storageMatch) {
+             currentStorage = storageMatch[1].toUpperCase().replace('TB', 'TB').replace('GB', 'GB');
+             if (currentStorage === '1024') currentStorage = '1TB';
+         }
+         return; // Переходим к следующей строке, так как тут нет цены
+      }
+
+      // 2. Ищем строку с цветом и ценой (напр. "Burgundy -4860" или "Black 5320")
+      if (currentModel) {
+        // Ищем цену (число от 3 до 7 знаков)
+        const priceMatch = line.match(/\b\d{3,7}\b/);
+        if (priceMatch) {
+           const price = Number(priceMatch[0]);
+           
+           // Ищем цвет (все, что до цены)
+           let colorStr = line.replace(priceMatch[0], '').replace(/[-—]/g, '').trim();
+           if (!colorStr) colorStr = "Standard";
+
+           // Создаем запись
+           const newDealRef = push(ref(db, 'deals'));
+           set(newDealRef, { 
+             category: 'iPhone', 
+             model: currentModel, 
+             storage: currentStorage, 
+             color: colorStr, 
+             sim: "eSim", 
+             buy: price, // Цена в AED сохраняется как есть
+             status: 'in', 
+             storePrice: 0, 
+             imei: '' 
+           });
+           addedCount++;
+        }
+      }
+    });
+    
+    if (addedCount > 0) { alert(`Добавлено: ${addedCount}`); closeImportModal(); switchTab('deals'); } else alert('Не распознано. Проверьте формат.');
+  }
+
+  window.generateSingleListImage = function() {
+    const listWrap = document.getElementById('singlePosterList');
+    let groupedItems = {};
+    
+    Object.keys(deals).forEach(key => {
+      const item = deals[key];
+      if (item.status === 'in') {
+        const groupKey = `${item.model}_${item.storage || ''}_${item.color || ''}`;
+        const desc = [item.storage, item.sim, item.color].filter(Boolean).join(' • ');
+        const price = item.storePrice || item.buy;
+
+        if (!groupedItems[groupKey]) {
+          groupedItems[groupKey] = { model: item.model, desc: desc || item.category, price: price, oldPrice: item.oldPrice || null };
+        }
+      }
+    });
+    
+    let html = '';
+    let keys = Object.keys(groupedItems).sort((a, b) => {
+      const isA = groupedItems[a].model.includes('iPhone') ? 1 : 0;
+      const isB = groupedItems[b].model.includes('iPhone') ? 1 : 0;
+      return isB - isA;
+    });
+
+    keys.forEach(key => {
+      const item = groupedItems[key];
+      const hasDiscount = item.oldPrice && Number(item.oldPrice) > Number(item.price);
+      const discountPercent = hasDiscount ? Math.round((1 - (Number(item.price) / Number(item.oldPrice))) * 100) : 0;
+      
+      html += `
+      <div class="poster-item">
+        <div class="p-info"><div class="p-model">${item.model}</div><div class="p-desc">${item.desc}</div></div>
+        <div class="p-price-wrap">
+          ${hasDiscount ? `<div class="p-old-price">${Number(item.oldPrice).toLocaleString('ru-RU')} ₽</div>` : ''}
+          <div class="p-price">${Number(item.price).toLocaleString('ru-RU')} ₽</div>
+          ${hasDiscount ? `<div class="p-discount">-${discountPercent}%</div>` : ''}
+        </div>
+      </div>`;
+    });
+    
+    listWrap.innerHTML = html || '<p style="font-size:12px; text-align:center; opacity:0.6;">Нет товаров</p>';
+
+    const posterElement = document.getElementById('singleItemContainer');
+    html2canvas(posterElement, { scale: 2, backgroundColor: null, useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      
+      if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+         const win = window.open();
+         win.document.write('<img src="' + imgData + '" style="width:100%;" />');
+      } else {
+         const link = document.createElement('a');
+         link.download = `spisok_nalichiya.png`;
+         link.href = imgData;
+         link.click();
+      }
+    });
+  }
+
+  window.copyWhatsAppList = function() {
+    let groupedItems = {};
+    Object.keys(deals).forEach(key => {
+      const item = deals[key];
+      if (item.status === 'in') {
+        const groupKey = `${item.model}_${item.storage || ''}_${item.color || ''}`;
+        const desc = [item.storage, item.sim, item.color].filter(Boolean).join(' • ');
+        const price = item.storePrice || item.buy;
+        if (!groupedItems[groupKey]) {
+          groupedItems[groupKey] = { model: item.model, desc: desc || item.category, price: price };
+        }
+      }
+    });
+    
+    let text = "🔥 *FREE ZONE (В наличии)*\n\n";
+    let keys = Object.keys(groupedItems).sort((a, b) => {
+      const isA = groupedItems[a].model.includes('iPhone') ? 1 : 0;
+      const isB = groupedItems[b].model.includes('iPhone') ? 1 : 0;
+      return isB - isA;
+    });
+
+    keys.forEach(key => {
+      const item = groupedItems[key];
+      text += `▪️ ${item.model} ${item.desc ? '(' + item.desc + ')' : ''}\n   Цена: *${Number(item.price).toLocaleString('ru-RU')} ₽*\n\n`;
+    });
+
+    text += "💳 Доступна рассрочка\n";
+    text += "🔥 Предзаказ ВЫГОДНЕЕ (аванс 3000 ₽)\n\n";
+    text += "📞 Заказ: +7 988 783-66-77";
+
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Текст списка скопирован! Откройте WhatsApp и вставьте его в чат.");
+    }).catch(err => {
+      prompt("Не удалось скопировать автоматически. Скопируйте текст вручную:", text);
+    });
+  }
+
+  window.downloadImage = function(mode) {
+    const posterElement = document.getElementById('posterContainer');
+    html2canvas(posterElement, { scale: 2, backgroundColor: null, useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `free_zone_full_prajs_${new Date().getDate()}.png`;
+      link.href = imgData;
+      
+      if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+         const win = window.open();
+         win.document.write('<img src="' + imgData + '" style="width:100%;" />');
+      } else {
+         link.click();
+      }
+    });
   }
 </script>
-
 </body>
 </html>
