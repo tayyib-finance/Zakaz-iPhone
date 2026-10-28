@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Заказ iPhone и Сравнение</title>
+<title>Заказ и Наценка</title>
 <style>
   :root {
     --bg-main: #0f111a; --bg-card: #1a1d2d; --text-main: #ffffff;
@@ -14,189 +14,269 @@
   body { background: var(--bg-main); color: var(--text-main); margin: 0; padding: 16px; padding-bottom: 40px; }
   
   .container { max-width: 600px; margin: 0 auto; }
+
   h2 { font-size: 18px; margin-bottom: 12px; color: #f5c76a; }
 
+  /* Ввод */
   .supplier-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
   .supplier-title { font-size: 13px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
   .supplier-title.main { color: #a3e635; }
-  .supplier-box textarea { width: 100%; height: 120px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none; line-height: 1.4;}
-  
-  .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; text-align: center; width: 100%;}
-  .btn-compare { background: #a3e635; color: #000; margin: 15px 0; }
+  .supplier-box textarea { width: 100%; height: 100px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 12px; resize: vertical; outline: none; line-height: 1.4;}
 
-  .result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-  .result-title { font-size: 14px; font-weight: 700; color: #f5c76a; margin-bottom: 8px; }
-  .prices-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .price-box { border-radius: 6px; padding: 6px 2px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
-  .price-box .label { font-size: 9px; opacity: 0.8; margin-bottom: 2px; }
-  .price-box .val { font-size: 11px; font-weight: 700; }
+  .markup-box { background: #2a2e42; padding: 12px; border-radius: 12px; display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .markup-box input { flex: 1; background: #0f111a; border: 1px solid #475569; color: #fff; padding: 10px; border-radius: 8px; font-size: 16px; font-weight: 700; color: #4ade80; outline: none;}
+  .markup-box button { background: #4ade80; color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; font-size: 14px; cursor: pointer;}
+
+  /* Таблица */
+  .table-header { display: grid; grid-template-columns: 3fr 1.5fr 2fr; gap: 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; padding: 0 10px; text-transform: uppercase; letter-spacing: 0.5px;}
+  .calc-row { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 8px; display: grid; grid-template-columns: 3fr 1.5fr 2fr; gap: 8px; align-items: center;}
+  .calc-name { font-size: 13px; font-weight: 700; line-height: 1.2;}
+  .calc-name span { font-size: 10px; color: var(--text-muted); font-weight: normal; display: block; margin-top: 2px;}
+  .calc-buy { font-size: 13px; color: #f5c76a; font-weight: 700; text-align: right;}
+  .calc-sell { width: 100%; background: #0f111a; border: 1px solid #475569; color: #4ade80; padding: 8px; border-radius: 6px; font-size: 14px; font-weight: 800; text-align: right; outline: none;}
+
+  /* Итог */
+  .total-box { background: #1e3a8a; border: 1px solid #3b82f6; border-radius: 12px; padding: 15px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+  .total-title { font-size: 14px; font-weight: 700; color: #93c5fd; }
+  .total-sum { font-size: 22px; font-weight: 900; color: #fff; }
+
+  /* Кнопки действий */
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 30px;}
+  .btn { padding: 14px; border-radius: 8px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; width: 100%;}
+  .btn-download { background: #ef4444; color: #fff; }
+  .btn-wa { background: #3b82f6; color: #fff; }
+
+  /* Витрина (ABBL формат - минимализм) */
+  .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-bottom: 20px; overflow: hidden;}
+  .poster { padding: 30px 20px; text-align: center; border-radius: 22px; background: radial-gradient(circle at top, #2a0e14 0%, #0f111a 60%); }
+  .poster-title { font-size: 24px; font-weight: 900; margin: 0 0 6px; letter-spacing: 1px; color: #fff;}
+  .poster-subtitle { font-size: 11px; font-weight: 700; margin: 0 0 20px; text-transform: uppercase; letter-spacing: 1px; color: #e11d48;}
+  .poster-list { display: flex; flex-direction: column; gap: 10px; }
+  .poster-item { border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; text-align: left; gap: 10px; background: rgba(30, 15, 20, 0.7); border: 1px solid #4a202a; }
+  .p-model { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 4px;}
+  .p-desc { font-size: 11px; color: #8b92a5;}
+  .p-price { font-size: 18px; font-weight: 800; white-space: nowrap; color: #4ade80;}
   
-  .bg-green { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #4ade80; }
-  .bg-red { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; }
-  .bg-gray { background: #1f2937; border: 1px solid #374151; color: #9ca3af; }
+  .poster-footer { margin-top: 20px; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; text-align: left; border: 1px solid #3f2e14; background: rgba(63, 46, 20, 0.3); }
+  .footer-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #f5c76a; }
+  .footer-sub { font-size: 11px; font-weight: normal; margin-left: 24px; margin-top: -5px; color: #aaa;}
+  .footer-phone { margin-top: 5px; text-align: center; padding-top: 12px; border-top: 1px dashed #5a4020; }
+  .phone-number { font-size: 18px; font-weight: 800; letter-spacing: 1px; color: #4ade80; }
 </style>
 </head>
 <body>
 
 <div class="container">
   
-  <h2>1. Сравнение цен (Ахмед - основа)</h2>
+  <h2>1. Вставьте прайс Ахмеда</h2>
   <div class="supplier-box">
-    <div class="supplier-title main">⭐ Поставщик 1 (Ахмед)</div>
-    <textarea id="supplier1" placeholder="Вставьте прайс Ахмеда..."></textarea>
-  </div>
-  <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 2</div>
-    <textarea id="supplier2" placeholder="Вставьте прайс..."></textarea>
-  </div>
-  <div class="supplier-box">
-    <div class="supplier-title">🏪 Поставщик 3 (Дубай, AED)</div>
-    <textarea id="supplier3" placeholder="Вставьте прайс..."></textarea>
-  </div>
-  <div class="supplier-box">
-    <div class="supplier-title">🇦🇪 Поставщик 4 (Австралия, AED)</div>
-    <textarea id="supplier4" placeholder="Вставьте прайс..."></textarea>
+    <div class="supplier-title main">⭐ Поставщик 1 (Ахмед - Основа)</div>
+    <textarea id="supplier1" placeholder="18 Pro 256 Black (eSim) - 104500..."></textarea>
   </div>
 
-  <button class="btn btn-compare" onclick="comparePrices()">Сравнить цены</button>
-  <div id="results"></div>
+  <!-- Блок наценки -->
+  <div class="markup-box">
+    <input type="number" id="markupInput" value="5000" placeholder="Наценка">
+    <button onclick="calculatePrices()">Рассчитать</button>
+  </div>
+
+  <!-- Результаты -->
+  <div class="table-header">
+    <div>Модель</div>
+    <div style="text-align:right;">Закупка</div>
+    <div style="text-align:right;">Ваша цена</div>
+  </div>
+  <div id="calcList"></div>
+  
+  <!-- Итоговая сумма -->
+  <div class="total-box" id="totalBox" style="display:none;">
+    <div class="total-title">Общая сумма (продажа):</div>
+    <div class="total-sum" id="totalSum">0 ₽</div>
+  </div>
+
+  <div class="actions" id="actionButtons" style="display:none;">
+    <button class="btn btn-download" onclick="downloadPosterImage()">📥 Скачать фото</button>
+    <button class="btn btn-wa" onclick="copyWhatsAppText()">📲 Текст в WhatsApp</button>
+  </div>
+
+  <!-- Витрина (Скрыта до генерации) -->
+  <div class="preview-container" id="posterContainer" style="display:none;">
+    <div class="poster" id="posterBody">
+      <h1 class="poster-title">FREE ZONE</h1>
+      <p class="poster-subtitle">ЛУЧШИЕ ЦЕНЫ</p>
+      <div style="text-align: center; margin-bottom: 15px; font-size: 12px; color: #f5c76a; font-weight: 700;">
+        ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ
+      </div>
+      <div class="poster-list" id="posterList"></div>
+      <div class="poster-footer">
+        <div class="footer-row"><span>💳</span> Доступна рассрочка</div>
+        <div class="footer-sub">Без банков и переплат</div>
+        <div class="footer-row" style="margin-top: 5px;"><span>🔥</span> Предзаказ ВЫГОДНЕЕ!</div>
+        <div class="footer-sub">Аванс всего 3000 ₽. Экономьте!</div>
+        <div class="footer-phone">
+          <div style="font-size: 11px; margin-bottom: 4px; opacity: 0.8; color: #aaa;">Заказ по телефону / WhatsApp:</div>
+          <div class="phone-number">+7 988 783-66-77</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-  // Ультра-парсер (понимает скобки)
-  function parseSupplierText(text, isDubai = false) {
-    let result = []; 
-    if(!text) return result;
+  let parsedItems = []; // Массив для хранения данных
 
-    let currentModel = "";
-    let currentStorage = "";
-    
+  // Парсер
+  function parseAhmedText(text) {
+    let result = [];
     const lines = text.split('\n');
-    lines.forEach(rawLine => {
-      let line = rawLine.trim(); 
+    
+    lines.forEach(line => {
+      line = line.trim();
       if (!line) return;
 
-      // Проверяем, есть ли цена в строке (от 4 до 7 цифр в конце)
+      // Ищем цену (от 4 до 7 цифр в конце строки)
       const priceMatch = line.match(/(\d{4,7})$/);
+      if (!priceMatch) return;
       
-      // Ищем модель (iPhone 18, 18 Pro, 18 Pro Max)
+      const price = Number(priceMatch[1]);
+
+      // Ищем модель, память, цвет
       const modelMatch = line.match(/(?:iPhone\s*)?(1[5-8]|11|12|13|14)(?:\s*(?:Pro|про))?(?:\s*(?:Max|Макс))?/i);
-      
-      // Ищем память (256, 512, 1TB, 2TB)
       const storageMatch = line.match(/\b(64|128|256|512|1024|1TB|2TB)\b/i);
-
-      // Ищем SIM (eSim или 1Sim+eSim)
-      let simType = "";
-      if (line.toLowerCase().includes('esim') || line.toLowerCase().includes('e-sim')) simType = "eSim";
-      if (line.toLowerCase().includes('1sim') || line.toLowerCase().includes('1-sim')) simType = "1Sim+eSim";
-
-      // Если нашли модель и память, обновляем текущую модель
+      
       if (modelMatch && storageMatch) {
          let baseNum = modelMatch[1];
          let isMax = line.toLowerCase().includes('max') || line.toLowerCase().includes('макс');
          let isPro = line.toLowerCase().includes('pro') || line.toLowerCase().includes('про');
+         
+         let modelName = `iPhone ${baseNum}`;
+         if (isPro) modelName += ' Pro';
+         if (isMax) modelName += ' Max';
+         
+         let storage = storageMatch[1].toUpperCase();
+         if (storage === '1024') storage = '1TB';
+         if (storage === '2048') storage = '2TB';
+         if (storage === '64') storage = '64GB';
+         if (storage === '128') storage = '128GB';
+         if (storage === '256') storage = '256GB';
+         if (storage === '512') storage = '512GB';
 
-         currentModel = `iPhone ${baseNum}`;
-         if (isPro) currentModel += ' Pro';
-         if (isMax) currentModel += ' Max';
+         // Цвет и SIM
+         let restOfLine = line.replace(priceMatch[0], '').replace(modelMatch[0], '').replace(storageMatch[0], '');
+         let sim = restOfLine.includes('eSim') ? 'eSIM' : (restOfLine.includes('1Sim') ? '1SIM+eSIM' : '');
+         let color = restOfLine.replace(/\(.*?\)/g, '').replace(/[-—]/g, '').trim();
          
-         let st = storageMatch[1].toUpperCase();
-         if (st === '1024') st = '1TB';
-         if (st === '2048') st = '2TB';
-         if (st === '64') st = '64GB';
-         if (st === '128') st = '128GB';
-         if (st === '256') st = '256GB';
-         if (st === '512') st = '512GB';
-         currentStorage = st;
-         
-         // Если в этой же строке есть цена (как у Ахмеда)
-         if (priceMatch) {
-            const price = Number(priceMatch[1]);
-            let colorStr = line.replace(priceMatch[0], '').replace(/\(.*?\)/g, '').replace(modelMatch[0], '').replace(storageMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
-            if (!colorStr) colorStr = "Standard";
-            
-            let key = `${currentModel} ${currentStorage} ${colorStr} ${simType}`.trim();
-            result.push({ key: key, price: price });
-         }
-         return; 
-      }
-
-      // Если модель уже есть, но цена на новой строке (как у Дубая)
-      if (currentModel && currentStorage && priceMatch) {
-         const price = Number(priceMatch[1]);
-         let colorStr = line.replace(priceMatch[0], '').replace(/[-—@]/g, '').replace(/GB/gi, '').replace(/TB/gi, '').trim();
-         
-         // Игнорируем мусор
-         if (colorStr.toLowerCase().includes('гарант') || colorStr.toLowerCase().includes('адрес') || colorStr.toLowerCase().includes('номер') || colorStr.toLowerCase().includes('мест')) return;
-         
-         if (!colorStr) colorStr = "Standard";
-         if (colorStr.toLowerCase().includes('burg')) colorStr = "Burgundy";
-         if (colorStr.toLowerCase().includes('glac')) colorStr = "Glacier";
-         
-         let key = `${currentModel} ${currentStorage} ${colorStr} ${simType}`.trim();
-         result.push({ key: key, price: price });
+         parsedItems.push({
+           model: modelName,
+           storage: storage,
+           color: color || 'Standard',
+           sim: sim,
+           buyPrice: price
+         });
       }
     });
     return result;
   }
 
-  window.comparePrices = function() {
-    document.getElementById('results').innerHTML = '';
+  // Расчет и вывод таблицы
+  window.calculatePrices = function() {
+    const text = document.getElementById('supplier1').value;
+    const markup = Number(document.getElementById('markupInput').value) || 0;
+    
+    parsedItems = [];
+    parseAhmedText(text);
 
-    const list1 = parseSupplierText(document.getElementById('supplier1').value, false);
-    const list2 = parseSupplierText(document.getElementById('supplier2').value, false);
-    const list3 = parseSupplierText(document.getElementById('supplier3').value, true);
-    const list4 = parseSupplierText(document.getElementById('supplier4').value, true);
+    if (parsedItems.length === 0) return alert('Не удалось распознать текст. Убедитесь, что цена стоит в конце строки.');
 
-    let dict2 = {}; list2.forEach(i => dict2[i.key] = i.price);
-    let dict3 = {}; list3.forEach(i => dict3[i.key] = i.price);
-    let dict4 = {}; list4.forEach(i => dict4[i.key] = i.price);
-
-    let resultsHtml = '';
-
-    if (list1.length === 0) {
-        document.getElementById('results').innerHTML = '<div style="text-align:center; padding:20px; color:#f87171;">Не удалось распознать текст Ахмеда. Убедитесь, что есть цена в конце строки.</div>';
-        return;
-    }
-
-    list1.forEach(item => {
-      const key = item.key; 
-      const price1 = item.price;
-      const price2 = dict2[key] || null; 
-      const price3 = dict3[key] || null; 
-      const price4 = dict4[key] || null;
-
-      let minPrice = Math.min(price1 || Infinity, price2 || Infinity, price3 || Infinity, price4 || Infinity);
+    let html = '';
+    
+    parsedItems.forEach((item, index) => {
+      const finalPrice = item.buyPrice + markup;
       
-      // Форматируем название для вывода
-      let displayName = key.replace(' eSim', ' (eSim)').replace(' 1Sim+eSim', ' (1Sim+eSim)');
-      
-      resultsHtml += `
-        <div class="result-card">
-          <div class="result-title">${displayName}</div>
-          <div class="prices-grid">
-            <div class="price-box ${price1 === minPrice ? 'bg-green' : 'bg-red'}">
-              <span class="label">АХМЕД</span>
-              <span class="val">${price1.toLocaleString('ru-RU')} ₽</span>
-            </div>
-            <div class="price-box ${price2 === minPrice ? 'bg-green' : (price2 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ПОСТ 2</span>
-              <span class="val">${price2 ? price2.toLocaleString('ru-RU') + ' ₽' : '-'}</span>
-            </div>
-            <div class="price-box ${price3 === minPrice ? 'bg-green' : (price3 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ПОСТ 3</span>
-              <span class="val">${price3 ? price3.toLocaleString('ru-RU') + ' AED' : '-'}</span>
-            </div>
-            <div class="price-box ${price4 === minPrice ? 'bg-green' : (price4 ? 'bg-red' : 'bg-gray')}">
-              <span class="label">ПОСТ 4</span>
-              <span class="val">${price4 ? price4.toLocaleString('ru-RU') + ' AED' : '-'}</span>
-            </div>
+      html += `
+        <div class="calc-row">
+          <div class="calc-name">
+            ${item.model} ${item.storage}
+            <span>${item.color} ${item.sim}</span>
           </div>
-        </div>`;
+          <div class="calc-buy">${item.buyPrice.toLocaleString('ru-RU')} ₽</div>
+          <div>
+            <input type="number" class="calc-sell" id="sell_${index}" value="${finalPrice}" oninput="updateTotal()">
+          </div>
+        </div>
+      `;
     });
 
-    document.getElementById('results').innerHTML = resultsHtml;
+    document.getElementById('calcList').innerHTML = html;
+    document.getElementById('totalBox').style.display = 'flex';
+    document.getElementById('actionButtons').style.display = 'grid';
+    document.getElementById('posterContainer').style.display = 'block';
+    
+    updateTotal();
+    generatePosterPreview(); // Автоматически генерируем витрину
+  }
+
+  // Подсчет общей суммы при изменении цен
+  window.updateTotal = function() {
+    let total = 0;
+    parsedItems.forEach((item, index) => {
+      const val = Number(document.getElementById(`sell_${index}`).value) || 0;
+      total += val;
+    });
+    document.getElementById('totalSum').textContent = total.toLocaleString('ru-RU') + ' ₽';
+    generatePosterPreview(); // Обновляем витрину при каждом изменении
+  }
+
+  // Генерация красивой витрины
+  window.generatePosterPreview = function() {
+    let html = '';
+    parsedItems.forEach((item, index) => {
+      const finalPrice = Number(document.getElementById(`sell_${index}`).value) || 0;
+      const desc = [item.storage, item.sim, item.color].filter(Boolean).join(' • ');
+      
+      html += `
+      <div class="poster-item">
+        <div class="p-info">
+          <div class="p-model">${item.model}</div>
+          <div class="p-desc">${desc}</div>
+        </div>
+        <div class="p-price">${finalPrice.toLocaleString('ru-RU')} ₽</div>
+      </div>`;
+    });
+    document.getElementById('posterList').innerHTML = html;
+  }
+
+  // Скачивание картинки
+  window.downloadPosterImage = function() {
+    const posterElement = document.getElementById('posterContainer');
+    html2canvas(posterElement, { scale: 2, backgroundColor: '#0f111a', useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) { 
+         const win = window.open(); 
+         win.document.write('<img src="' + imgData + '" style="width:100%;" />'); 
+      } else { 
+         const link = document.createElement('a'); link.download = `vizitka.png`; link.href = imgData; link.click(); 
+      }
+    });
+  }
+
+  // Копирование текста для WhatsApp
+  window.copyWhatsAppText = function() {
+    let text = "🔥 *FREE ZONE (В наличии)*\nПРЕДЗАКАЗ ДО 17:00\n\n";
+    
+    parsedItems.forEach((item, index) => {
+      const finalPrice = Number(document.getElementById(`sell_${index}`).value) || 0;
+      const desc = [item.storage, item.sim, item.color].filter(Boolean).join(', ');
+      text += `▪️ ${item.model} (${desc})\n   Цена: *${finalPrice.toLocaleString('ru-RU')} ₽*\n\n`;
+    });
+    
+    text += "💳 Доступна рассрочка\n🔥 Предзаказ ВЫГОДНЕЕ (аванс 3000 ₽)\n\n📞 Заказ: +7 988 783-66-77";
+    
+    navigator.clipboard.writeText(text).then(() => { 
+      alert("Текст скопирован! Откройте WhatsApp и вставьте его."); 
+    });
   }
 </script>
 </body>
