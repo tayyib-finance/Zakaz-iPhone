@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Калькулятор Прайса</title>
+<!-- Подключаем библиотеку для создания картинок -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  body { background-color: #0f0f13; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; }
+  .container { max-width: 500px; margin: 0 auto; }
+  
+  /* Блок настроек */
+  .controls { background: #1a1a20; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+  textarea { width: 100%; height: 120px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 14px; margin-bottom: 10px; }
+  .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+  input[type="number"] { flex: 1; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; font-size: 16px; }
+  button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .btn-calc { background: #00ff88; color: #000; }
+  .btn-calc:active { background: #00cc6a; }
+  .btn-download { background: #e6194b; color: white; margin-top: 10px; display: none; }
+  
+  /* Область для скриншота */
+  #capture-area { background: #0f0f13; padding: 20px; border-radius: 15px; }
+  
+  .header { text-align: center; margin-bottom: 20px; }
+  .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+  .header p { color: #e6194b; font-weight: bold; margin-top: 5px; font-size: 14px; text-transform: uppercase; }
+
+  .group-title { color: #e0a800; font-size: 14px; font-weight: bold; margin: 15px 0 8px 0; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px;}
+  
+  .card { 
+    background: #1a1a20; 
+    border-radius: 10px; 
+    padding: 12px 15px; 
+    margin-bottom: 8px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border: 1px solid #2a2a35;
+  }
+  .info { flex: 1; padding-right: 10px;}
+  .title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
+  .title-row h3 { margin: 0; font-size: 15px; font-weight: 600;}
+  .tag { background: #3a3a4a; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+  .desc { color: #888; font-size: 12px; margin-top: 4px; }
+  
+  .price-block { text-align: right; min-width: 90px;}
+  .new-price { font-size: 16px; font-weight: bold; color: #fff; white-space: nowrap;}
+  .old-price { color: #666; text-decoration: line-through; font-size: 11px; display: block; }
+
+  .footer { 
+    background: #1a1a20; 
+    border: 1px solid #4a3a1a; 
+    border-radius: 12px; 
+    padding: 15px; 
+    margin-top: 20px; 
+    text-align: center;
+  }
+  .footer h4 { color: #e0a800; margin: 0 0 5px 0; font-size: 14px;}
+  .footer p { font-size: 12px; color: #ccc; margin: 5px 0 10px 0; }
+  .phone { color: #00ff88; font-size: 18px; font-weight: bold; text-decoration: none; }
+
+  /* Скрываем элементы управления при создании скриншота */
+  .hide-on-capture { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Панель управления (не попадет на скриншот) -->
+  <div class="controls">
+    <p style="margin-top:0; font-size:14px; color:#aaa;">Вставьте список сюда:</p>
+    <textarea id="input-text" placeholder="🇮🇩A57 8/256 Grey 33000&#10;🇲🇾A57 12/512 Grey 40000&#10;🇮🇳S25 12/256 BlueBlack 52000"></textarea>
+    
+    <div class="input-group">
+      <input type="number" id="markup-val" placeholder="Наценка (напр. 2000)" value="0">
+      <select id="markup-type" style="background:#0f0f13; color:white; border:1px solid #444; border-radius:8px; padding:10px; font-size:16px;">
+        <option value="rub">₽</option>
+        <option value="percent">%</option>
+      </select>
+    </div>
+    
+    <button class="btn-calc" onclick="processList()">Рассчитать и Показать</button>
+    <button class="btn-download" id="btn-download" onclick="downloadImage()">📥 Скачать картинку</button>
+  </div>
+
+  <!-- Это область, которая будет превращаться в картинку -->
+  <div id="capture-area">
+    <div class="header">
+      <h1>FREE ZONE</h1>
+      <p>ПРЕДЗАКАЗ ДО 17:00 • ВЫДАЧА НА СУББОТУ</p>
+    </div>
+
+    <div id="result-list">
+      <!-- Сюда будут падать результаты -->
+      <div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div>
+    </div>
+
+    <div class="footer">
+      <h4>💳 Доступна рассрочка</h4>
+      <p>Без банков и переплат</p>
+      <h4>🔥 Предзаказ ВЫГОДНЕЕ!</h4>
+      <p>Аванс всего 3000 ₽. Экономьте!</p>
+      <hr style="border-color: #333; margin: 10px 0;">
+      <p>Заказ по телефону / WhatsApp:</p>
+      <a href="tel:+79887836677" class="phone">+7 988 783-66-77</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function processList() {
+    const rawText = document.getElementById('input-text').value;
+    const markupVal = parseFloat(document.getElementById('markup-val').value) || 0;
+    const markupType = document.getElementById('markup-type').value;
+    
+    const lines = rawText.split('\n');
+    let htmlResult = '';
+    
+    lines.forEach(line => {
+      line = line.trim();
+      if (!line) return;
+
+      // Регулярное выражение для поиска цены в конце строки
+      // Ищет пробел и цифры в конце строки (например, " 33000")
+      const priceMatch = line.match(/^(.*?)\s+(\d+)$/);
+      
+      if (priceMatch) {
+        const namePart = priceMatch[1];
+        const originalPrice = parseInt(priceMatch[2]);
+        
+        // Считаем новую цену
+        let newPrice = originalPrice;
+        if (markupType === 'rub') {
+          newPrice += markupVal;
+        } else {
+          newPrice = Math.round(originalPrice * (1 + markupVal / 100));
+        }
+
+        // Форматируем цену (с пробелами для тысяч)
+        const formatPrice = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        
+        // Разбиваем название на модель и характеристики (пытаемся найти размер памяти)
+        let title = namePart;
+        let desc = "";
+        const specMatch = namePart.match(/(.*?)\s+(\d+\/\d+.*)/);
+        if (specMatch) {
+            title = specMatch[1];
+            desc = specMatch[2];
+        }
+
+        // Формируем HTML карточки
+        htmlResult += `
+          <div class="card">
+            <div class="info">
+              <div class="title-row">
+                <h3>${title}</h3>
+              </div>
+              <div class="desc">${desc}</div>
+            </div>
+            <div class="price-block">
+              ${markupVal !== 0 ? `<span class="old-price">${formatPrice(originalPrice)} ₽</span>` : ''}
+              <span class="new-price">${formatPrice(newPrice)} ₽</span>
+            </div>
+          </div>
+        `;
+      } else {
+        // Если строка не распозналась как товар с ценой, выводим её как заголовок группы
+        htmlResult += `<div class="group-title">${line}</div>`;
+      }
+    });
+    
+    document.getElementById('result-list').innerHTML = htmlResult;
+    document.getElementById('btn-download').style.display = 'block';
+  }
+
+  function downloadImage() {
+    const captureArea = document.getElementById('capture-area');
+    
+    // Временно скрываем ненужное (если нужно)
+    // captureArea.classList.add('capturing');
+
+    html2canvas(captureArea, {
+        scale: 2, // Высокое качество
+        backgroundColor: "#0f0f13",
+        useCORS: true
+    }).then(canvas => {
+        // Создаем ссылку для скачивания
+        const link = document.createElement('a');
+        link.download = 'prayslist.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        // captureArea.classList.remove('capturing');
+    });
+  }
+</script>
+
+</body>
+</html>
