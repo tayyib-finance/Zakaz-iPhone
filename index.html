@@ -8,16 +8,11 @@
 <style>
   body { background-color: #0f0f13; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; padding-bottom: 80px;}
   .container { max-width: 500px; margin: 0 auto; }
-  
-  /* Переключатель вкладок */
   .main-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
   .main-tab { flex: 1; padding: 12px; background: #1a1a20; color: #888; border: 1px solid #333; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
   .main-tab.active { background: #007aff; color: white; border-color: #007aff; }
-
-  /* Общие стили */
   .panel { background: #1a1a20; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
   textarea { width: 100%; height: 120px; background: #0f0f13; color: white; border: 1px solid #444; border-radius: 8px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-bottom: 10px; }
-  
   .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
   .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
   .btn-green { background: #00ff88; color: #000; }
@@ -25,19 +20,16 @@
   .btn-blue { background: #007aff; color: white; }
   .btn-grey { background: #444; color: white; }
   
-  /* Каталог */
   .header-text { color: #e0a800; font-size: 14px; font-weight: bold; margin-bottom: 15px; text-transform: uppercase; text-align: center;}
   .card { background: #1a1a20; border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; border: 1px solid #2a2a35; }
   .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;}
   .info { flex: 1; padding-right: 10px; }
   .title { font-weight: bold; font-size: 15px; margin-bottom: 2px; }
-  .desc { color: #888; font-size: 12px; }
   .price { font-size: 18px; font-weight: bold; color: #fff; white-space: nowrap;}
   .manual-markup { display: flex; align-items: center; gap: 5px; margin-top: 8px; background: #0f0f13; padding: 5px 10px; border-radius: 6px; border: 1px solid #333;}
   .manual-markup span { font-size: 12px; color: #aaa; }
   .manual-markup input { width: 60px; background: transparent; border: none; color: #00ff88; font-size: 14px; font-weight: bold; outline: none; text-align: center;}
   
-  /* Сравнение */
   .compare-block { background: #1a1a20; padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #333; }
   .compare-block textarea { height: 100px; margin-bottom: 5px;}
   .compare-block .btn-clear { padding: 8px; font-size: 12px; width: 100%; background: #333; color: #aaa; border-radius: 6px; border: none;}
@@ -45,7 +37,12 @@
   .rate-input input { width: 80px; padding: 8px; border-radius: 5px; border: none; font-size: 16px; font-weight: bold; text-align: center;}
   
   .compare-row { background: #0f0f13; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #333; }
-  .compare-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #e0a800;}
+  .compare-title { font-weight: bold; font-size: 13px; margin-bottom: 10px; color: #e0a800; line-height: 1.3;}
+  .compare-tags { display: flex; gap: 5px; margin-bottom: 8px; font-size: 10px;}
+  .tag { background: #333; padding: 2px 6px; border-radius: 4px; color: #ccc;}
+  .tag.blue { background: #007aff; color: white; }
+  .tag.green { background: #00ff88; color: #000; }
+
   .compare-grid { display: flex; gap: 5px; font-size: 12px; flex-wrap: wrap;}
   .compare-item { flex: 1; min-width: 45%; text-align: center; padding: 8px 5px; border-radius: 5px; background: #1a1a20; border: 1px solid #333; margin-bottom: 5px;}
   .compare-item.best { background: rgba(0, 255, 136, 0.15); border-color: #00ff88; color: #00ff88; font-weight: bold; }
@@ -55,7 +52,6 @@
   .footer h4 { color: #e0a800; margin: 0 0 5px 0; font-size: 14px;}
   .footer p { font-size: 12px; color: #ccc; margin: 5px 0 10px 0; }
   .phone { color: #00ff88; font-size: 18px; font-weight: bold; text-decoration: none; }
-  
   .hide-on-capture { display: none !important; }
 </style>
 </head>
@@ -97,10 +93,8 @@
     </div>
   </div>
 
-  <!-- ВКЛАДКА 2: СРАВНЕНИЕ (4 ПОСТАВЩИКА) -->
+  <!-- ВКЛАДКА 2: СРАВНЕНИЕ -->
   <div id="view-compare" style="display: none;">
-    
-    <!-- Курс доллара для Дубая -->
     <div class="rate-input">
       <span>🇦🇪 Курс $ (Дубай):</span>
       <input type="number" id="usd-rate" value="85" step="0.1">
@@ -122,8 +116,6 @@
       <textarea id="sup3" placeholder="Вставьте список 3..."></textarea>
       <button class="btn-clear" onclick="clearSupplier(3)">Очистить 3</button>
     </div>
-    
-    <!-- Блок Дубая -->
     <div class="compare-block" style="border-color: #e0a800;">
       <div style="font-weight:bold; margin-bottom:5px; color:#e0a800;">🇦🇪 Поставщик 4 (Дубай в AED)</div>
       <textarea id="sup4" placeholder="Вставьте список Дубая (модель на строке, цвета под ней)..."></textarea>
@@ -131,7 +123,6 @@
     </div>
 
     <button class="btn btn-green" onclick="runComparison()" style="margin-bottom: 20px;">Сравнить цены</button>
-    
     <div id="compare-results"></div>
   </div>
 
@@ -141,7 +132,6 @@
   let currentPriceData = []; 
   let compareData = { 1: [], 2: [], 3: [], 4: [] };
 
-  // Универсальная функция поиска цены (для 1, 2, 3 поставщиков)
   function extractPriceAndName(line) {
     const priceMatch = line.match(/(\d+)(?!.*\d)/); 
     if (!priceMatch) return null;
@@ -151,7 +141,6 @@
     return { name: name, price: price };
   }
 
-  // СПЕЦИАЛЬНЫЙ ПАРСЕР ДЛЯ ДУБАЯ (4-й поставщик)
   function parseDubaiText(text) {
     let parsed = [];
     let currentModel = "";
@@ -160,18 +149,27 @@
       line = line.trim();
       if (!line) return;
       
-      // Если строка содержит буквы и цифры (GB, TB) и НЕ содержит цену в конце — это заголовок модели
+      // Заголовок модели (содержит GB/TB и не содержит цифр цены в конце)
       if (line.match(/(GB|TB)/i) && !line.match(/\s+\d+$/)) {
         currentModel = line;
         return;
       }
 
-      // Если это строка с цветом и ценой (например, "Burgundy 4510")
       const data = extractPriceAndName(line);
       if (data && currentModel) {
-        // Склеиваем модель и цвет: "Iph 18 Pro 256GB Burgundy"
-        parsed.push({ name: `${currentModel} ${data.name}`, price: data.price, isDubai: true });
+        parsed.push({ name: `${currentModel} ${data.name}`, price: data.price });
       }
+    });
+    return parsed;
+  }
+
+  function parseSupplierText(text) {
+    let parsed = [];
+    text.split('\n').forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      const data = extractPriceAndName(line);
+      if (data) parsed.push(data);
     });
     return parsed;
   }
@@ -183,7 +181,7 @@
     document.getElementById('view-compare').style.display = (tab === 'compare') ? 'block' : 'none';
   }
 
-  // ================= ВКЛАДКА 1: ПРАЙС =================
+  // ================= ВКЛАДКА 1 =================
   function clearPriceList() {
     document.getElementById('input-text').value = '';
     document.getElementById('result-list').innerHTML = '<div style="text-align:center; color:#666; padding: 20px;">Вставьте текст и нажмите "Рассчитать"</div>';
@@ -221,9 +219,7 @@
         html += `
           <div class="card">
             <div class="card-top">
-              <div class="info">
-                <div class="title">${item.name}</div>
-              </div>
+              <div class="info"><div class="title">${item.name}</div></div>
               <div class="price">${formatPrice(finalPrice)} ₽</div>
             </div>
             <div class="manual-markup hide-on-capture">
@@ -277,41 +273,73 @@
 
     const usdRate = parseFloat(document.getElementById('usd-rate').value) || 85;
 
-    // УМНАЯ ОЧИСТКА
-    function getBaseName(name) {
+    // ГЛАВНАЯ ФУНКЦИЯ АНАЛИЗА СТРОКИ
+    function analyzeProductName(name) {
         let clean = name.toLowerCase();
-        clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
         
-        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'burgunby', 'glacier', 'glacir', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'esim'];
+        // 1. Транслит русских букв в английские
+        const ruToEn = { 'а':'a', 'б':'b', 'в':'v', 'г':'g', 'д':'d', 'е':'e', 'ё':'e', 'ж':'zh', 'з':'z', 'и':'i', 'й':'y', 'к':'k', 'л':'l', 'м':'m', 'н':'n', 'о':'o', 'п':'p', 'р':'r', 'с':'s', 'т':'t', 'у':'u', 'ф':'f', 'х':'h', 'ц':'ts', 'ч':'ch', 'ш':'sh', 'щ':'sch', 'ъ':'', 'ы':'y', 'ь':'', 'э':'e', 'ю':'yu', 'я':'ya' };
+        clean = clean.replace(/[а-яё]/g, char => ruToEn[char] || char);
+
+        // 2. Убираем всё лишнее (флаги, скобки, тире)
+        clean = clean.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
+        clean = clean.replace(/[^a-z0-9\s]/g, ' ');
+
+        // 3. ОПРЕДЕЛЯЕМ ПАМЯТЬ (256, 512, 1TB)
+        let memory = '';
+        const memMatch = clean.match(/\b(64|128|256|512|1tb|2tb)\b/i);
+        if (memMatch) {
+            memory = memMatch[1].toUpperCase();
+            clean = clean.replace(memMatch[0], ''); // Удаляем память из строки
+        }
+
+        // 4. ОПРЕДЕЛЯЕМ ТИП SIM
+        let simType = 'STANDARD';
+        if (clean.includes('esim') || clean.includes('e sim')) {
+            if (clean.includes('sim') || clean.includes('1sim') || clean.includes('2sim') || clean.includes('+')) {
+                simType = 'SIM+ESIM'; // Физическая + виртуальная
+            } else {
+                simType = 'ESIM'; // Только виртуальная
+            }
+        } else if (clean.includes('sim') || clean.includes('physical') || clean.includes('физ')) {
+             simType = 'SIM+ESIM'; // Скорее всего, если написано просто SIM, имеют в виду физ+есим
+        }
+        // Убираем все упоминания сим-карт из названия
+        clean = clean.replace(/\b(esim|e sim|sim|1sim|2sim|physical|dual)\b/g, '');
+
+        // 5. УБИРАЕМ ЦВЕТА
+        const colors = ['black', 'silver', 'blue', 'white', 'burgundy', 'glacier', 'grey', 'gray', 'navy', 'violet', 'pink', 'gold', 'green', 'purple', 'lilac', 'iceblue', 'graphite', 'jetblack', 'pistashio', 'cream', 'bronze', 'alm'];
         colors.forEach(color => {
             clean = clean.replace(new RegExp(color, 'g'), '');
         });
 
-        clean = clean.replace(/[^a-zа-я0-9\s]/g, ' ');
-        clean = clean.replace(/\s+/g, ' ').trim();
-
-        return clean;
+        // 6. ФОРМИРУЕМ ИТОГОВЫЙ КЛЮЧ
+        // Убираем лишние пробелы
+        let modelName = clean.replace(/\s+/g, ' ').trim();
+        
+        // Возвращаем склеенный ключ: например "iphone 18 pro max | 512 | ESIM"
+        return `${modelName} | ${memory || 'НЕТ ПАМЯТИ'} | ${simType}`;
     }
 
     let allProducts = {};
+    
     for (let i = 1; i <= 4; i++) {
         compareData[i].forEach(item => {
-            const key = getBaseName(item.name);
-            if (!key) return; 
+            const key = analyzeProductName(item.name);
+            if (!key || key.includes('| НЕТ ПАМЯТИ | STANDARD')) return; // Пропускаем мусорные строки
 
             if (!allProducts[key]) {
-                // Убираем название цвета из заголовка для красоты
-                let displayName = item.name;
-                if (i === 4) displayName = item.name.replace(/(Black|Silver|Blue|White|Burgundy|Glacier|Grey|Navy|Violet|Pink|Gold|Green|Purple|Lilac|IceBlue|Graphite|JetBlack|Pistashio|Cream)/gi, '').trim();
-                
-                allProducts[key] = { displayName: displayName, prices: {1: '-', 2: '-', 3: '-', 4: '-'} };
+                // Для красивого вывода сохраняем оригинальное название
+                allProducts[key] = { 
+                    displayName: item.name, 
+                    memory: key.split('|')[1].trim(),
+                    simType: key.split('|')[2].trim(),
+                    prices: {1: '-', 2: '-', 3: '-', 4: '-'} 
+                };
             }
             
-            // Для Дубая (4) считаем цену в рублях по формуле
             let finalPrice = item.price;
-            if (i === 4) {
-                finalPrice = Math.round((item.price / 3.65) * usdRate);
-            }
+            if (i === 4) finalPrice = Math.round((item.price / 3.65) * usdRate);
 
             if (allProducts[key].prices[i] === '-' || finalPrice < allProducts[key].prices[i]) {
                 allProducts[key].prices[i] = finalPrice;
@@ -321,6 +349,8 @@
 
     let html = '';
     const formatPrice = (num) => num === '-' ? '-' : num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    
+    // Сортируем по названию
     const sortedKeys = Object.keys(allProducts).sort();
 
     sortedKeys.forEach(key => {
@@ -335,9 +365,14 @@
             }
         }
 
+        // Форматируем теги для красоты
+        let simTag = prod.simType === 'ESIM' ? '<span class="tag blue">eSIM</span>' : '<span class="tag green">SIM+eSIM</span>';
+        let memTag = `<span class="tag">${prod.memory}</span>`;
+
         html += `
           <div class="compare-row">
             <div class="compare-title">${prod.displayName}</div>
+            <div class="compare-tags">${memTag} ${simTag}</div>
             <div class="compare-grid">
               <div class="compare-item ${bestSupplier === 1 ? 'best' : ''}"><span class="compare-label">ПОСТ 1</span>${formatPrice(prod.prices[1])} ₽</div>
               <div class="compare-item ${bestSupplier === 2 ? 'best' : ''}"><span class="compare-label">ПОСТ 2</span>${formatPrice(prod.prices[2])} ₽</div>
