@@ -48,7 +48,7 @@
   
   .poster-list { display: flex; flex-direction: column; gap: 10px; }
   .poster-item { border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; text-align: left; gap: 10px; background: rgba(30, 20, 20, 0.5); border: 1px solid rgba(255,255,255,0.05); }
-  .p-name { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.3; flex: 1;}
+  .p-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.3; flex: 1;}
   .p-price { font-size: 18px; font-weight: 800; white-space: nowrap; color: var(--green);}
   
   .poster-footer { margin-top: 25px; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; text-align: center; border: 1px solid #3f2e14; background: rgba(63, 46, 20, 0.2); }
@@ -127,28 +127,43 @@
     items = [];
 
     lines.forEach(line => {
-      // Ищем цену (от 4 до 7 цифр)
-      const priceMatch = line.match(/\b(\d{4,7})\b/);
-      if (!priceMatch) return;
+      // Очищаем от лишних символов, но сохраняем точки в числах на этом этапе
+      let cleanLine = line.replace(/[-—@]/g, ' ').trim();
+      
+      // Ищем цены с точками или без (от 4 до 7 цифр, возможно с точкой)
+      // \d{1,3}(\.\d{3})+ ищет формат 108.000
+      // \d{4,7} ищет формат 108000
+      const priceRegex = /\b(\d{1,3}(?:\.\d{3})+|\d{4,7})\b/g;
+      let matches = [...cleanLine.matchAll(priceRegex)];
 
-      const price = Number(priceMatch[1]);
-      let namePart = line.replace(priceMatch[0], '').replace(/[-—@]/g, '').trim();
+      if (matches.length > 0) {
+        // Берем последнее найденное число как цену
+        let lastMatch = matches[matches.length - 1];
+        let priceStr = lastMatch[0];
+        
+        // Убираем точки и преобразуем в число
+        let price = Number(priceStr.replace(/\./g, ''));
+        
+        // Название — это всё до цены
+        let namePart = cleanLine.substring(0, lastMatch.index).trim();
 
-      // Убираем слово "iPhone"
-      namePart = namePart.replace(/iPhone/gi, '').trim();
+        // Убираем слово "iPhone" и переводим в верхний регистр (как на скрине)
+        namePart = namePart.replace(/iPhone/gi, '').trim();
+        
+        // Меняем цвета на эмодзи
+        namePart = getColorEmoji(namePart);
 
-      // Меняем цвета на эмодзи
-      namePart = getColorEmoji(namePart);
+        // Убираем скобки и лишние пробелы
+        namePart = namePart.replace(/[()]/g, '').replace(/\s+/g, ' ');
 
-      // Убираем скобки, но оставляем текст внутри (чтобы были видны ГБ и eSim)
-      namePart = namePart.replace(/[()]/g, '').replace(/\s+/g, ' ');
-
-      if (namePart) {
-        items.push({ name: namePart, price: price });
+        // Если есть текст (не пустая строка)
+        if (namePart.length > 2) {
+          items.push({ name: namePart, price: price });
+        }
       }
     });
 
-    if (items.length === 0) return alert('Не найдено ни одной цены.');
+    if (items.length === 0) return alert('Не найдено ни одной цены. Проверьте текст.');
 
     renderEditTable();
     renderPoster();
@@ -182,11 +197,9 @@
 
     let html = '';
     items.forEach(item => {
-      // Для картинки можно делать шрифт чуть меньше, если название длинное
-      const fontSize = item.name.length > 25 ? '13px' : '15px';
       html += `
         <div class="poster-item">
-          <div class="p-name" style="font-size: ${fontSize};">${item.name}</div>
+          <div class="p-name">${item.name}</div>
           <div class="p-price">${item.price.toLocaleString('ru-RU')} ₽</div>
         </div>
       `;
@@ -219,7 +232,6 @@
   window.copyText = function() {
     if (items.length === 0) return alert('Сначала нажмите "Рассчитать"');
 
-    // Формируем красивый текст для WhatsApp (без слова iPhone, с эмодзи)
     let text = "🔥 *В НАЛИЧИИ*\n\n";
     items.forEach(item => {
       text += `▪️ ${item.name}\n   Цена: *${item.price.toLocaleString('ru-RU')} ₽*\n\n`;
