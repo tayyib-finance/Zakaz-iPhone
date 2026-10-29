@@ -22,7 +22,7 @@
 
   /* Блок ввода */
   .input-box { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border); }
-  textarea { width: 100%; height: 150px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; resize: vertical; outline: none; margin-bottom: 12px; font-family: monospace; line-height: 1.5;}
+  textarea { width: 100%; height: 120px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; resize: vertical; outline: none; margin-bottom: 12px; font-family: monospace; line-height: 1.5;}
   textarea::placeholder { color: #64748b; }
   
   .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -30,7 +30,6 @@
   
   .btn-calc { background: var(--green); color: #000; }
   .btn-clear { background: #334155; color: #fff; }
-  .btn-download { background: #e11d48; color: #fff; }
   .btn-wa { background: var(--blue); color: #fff; }
 
   /* Блок наценки */
@@ -38,7 +37,8 @@
   .markup-box input { width: 120px; background: #0f111a; border: 1px solid #475569; color: var(--green); padding: 10px; border-radius: 8px; font-size: 16px; font-weight: 700; text-align: center; outline: none;}
 
   /* Витрина */
-  .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-bottom: 20px; overflow: hidden;}
+  .preview-wrapper { margin-bottom: 30px; }
+  .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-bottom: 10px; overflow: hidden;}
   .poster { padding: 30px 20px; text-align: center; border-radius: 22px; background: radial-gradient(circle at top, #1a0e12 0%, #050508 60%); }
   
   .poster-header-text { text-align: center; margin-bottom: 20px; font-size: 13px; color: #f5c76a; font-weight: 700; line-height: 1.4;}
@@ -53,6 +53,9 @@
   .footer-sub { font-size: 12px; color: #aaa;}
   .footer-phone { margin-top: 10px; padding-top: 12px; border-top: 1px dashed #5a4020; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--green); }
   .empty-text { font-size: 13px; color: #64748b; margin: 30px 0;}
+
+  /* Кнопка скачивания под каждой картинкой */
+  .btn-save-page { background: #e11d48; color: #fff; width: 100%; padding: 12px; font-size: 15px; margin-bottom: 15px; border-radius: 8px;}
 </style>
 </head>
 <body>
@@ -67,7 +70,6 @@
       <button class="btn btn-clear" onclick="clearAll()">Очистить</button>
     </div>
     <div class="btn-grid">
-      <button class="btn btn-download" onclick="downloadImage()">📥 Скачать картинку</button>
       <button class="btn btn-wa" onclick="copyText()">📱 Текст в WhatsApp</button>
     </div>
   </div>
@@ -77,27 +79,7 @@
     <input type="number" id="markupInput" value="5000" oninput="applyMarkup()">
   </div>
 
-  <div class="preview-container" id="posterContainer">
-    <div class="poster">
-      <!-- Эти данные теперь будут подставляться автоматически -->
-      <div class="poster-header-text" id="posterHeader">
-        ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ
-      </div>
-      
-      <div class="poster-list" id="posterList">
-         <div class="empty-text">Вставьте текст и нажмите "Рассчитать"</div>
-      </div>
-      
-      <div class="poster-footer">
-        <div class="footer-title">💳 Доступна рассрочка</div>
-        <div class="footer-sub">Без банков и переплат</div>
-        <div class="footer-title" style="margin-top: 8px;">🔥 Предзаказ ВЫГОДНЕЕ!</div>
-        <div class="footer-sub" id="footerDeposit">Аванс всего 3000 ₽. Экономьте!</div>
-        <div style="font-size: 12px; color: #aaa; margin-top: 15px;">Заказ по телефону / WhatsApp:</div>
-        <div class="footer-phone">+7 988 783-66-77</div>
-      </div>
-    </div>
-  </div>
+  <div id="postersOutput"></div>
 
 </div>
 
@@ -107,6 +89,7 @@
   let currentMarkup = 5000;
   let headerText = "ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ";
   let depositText = "Аванс всего 3000 ₽. Экономьте!";
+  const ITEMS_PER_PAGE = 8; 
 
   function processText() {
     const text = document.getElementById('textInput').value;
@@ -114,7 +97,6 @@
 
     const lines = text.split('\n');
     items = [];
-    
     let headerLines = [];
     let depositFound = "";
 
@@ -122,19 +104,14 @@
       let cleanLine = line.trim();
       if (!cleanLine) return;
 
-      // Ищем инфу о выдаче (если есть слово ПОНЕДЕЛЬНИК, ВТОРНИК и т.д.)
       if (cleanLine.toLowerCase().includes('выдача') || cleanLine.toLowerCase().includes('предзаказ')) {
-          headerLines.push(cleanLine);
-          return;
+          headerLines.push(cleanLine); return;
       }
 
-      // Ищем инфу о брони/авансе
       if (cleanLine.toLowerCase().includes('бронь') || cleanLine.toLowerCase().includes('аванс') || cleanLine.toLowerCase().includes('оплата при получении')) {
-          depositFound = cleanLine;
-          return;
+          depositFound = cleanLine; return;
       }
 
-      // Ищем цену
       const priceRegex = /\b(\d{1,3}(?:\.\d{3})+|\d{4,7})\b/g;
       let matches = [...cleanLine.matchAll(priceRegex)];
 
@@ -147,27 +124,14 @@
         namePart = namePart.replace(/iPhone/gi, '').replace(/[()]/g, '').trim();
         namePart = namePart.toUpperCase().replace(/\s+/g, ' ');
 
-        if (namePart.length > 2) {
-          items.push({ name: namePart, buyPrice: price });
-        }
+        if (namePart.length > 2) items.push({ name: namePart, buyPrice: price });
       }
     });
 
     if (items.length === 0) return alert('Не найдено ни одной цены.');
 
-    // Обновляем шапку витрины
-    if (headerLines.length > 0) {
-        document.getElementById('posterHeader').innerHTML = headerLines.join('<br>');
-    } else {
-        document.getElementById('posterHeader').innerHTML = "ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ";
-    }
-
-    // Обновляем текст про аванс
-    if (depositFound) {
-        document.getElementById('footerDeposit').textContent = depositFound;
-    } else {
-        document.getElementById('footerDeposit').textContent = "Аванс всего 3000 ₽. Экономьте!";
-    }
+    if (headerLines.length > 0) headerText = headerLines.join('<br>');
+    if (depositFound) depositText = depositFound;
 
     document.getElementById('markupBox').style.display = 'flex';
     applyMarkup(); 
@@ -175,48 +139,86 @@
 
   window.applyMarkup = function() {
     currentMarkup = Number(document.getElementById('markupInput').value) || 0;
-    renderPoster();
+    renderPosters();
   }
 
-  function renderPoster() {
-    const listWrap = document.getElementById('posterList');
-    if (items.length === 0) return;
+  function renderPosters() {
+    const outputContainer = document.getElementById('postersOutput');
+    outputContainer.innerHTML = '';
 
-    let html = '';
-    items.forEach(item => {
-      const finalPrice = item.buyPrice + currentMarkup;
-      html += `
-        <div class="poster-item">
-          <div class="p-name">${item.name}</div>
-          <div class="p-price">${finalPrice.toLocaleString('ru-RU')} ₽</div>
-        </div>
+    if (items.length === 0) {
+      outputContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;">Нет данных для отображения</div>';
+      return;
+    }
+
+    for (let i = 0; i < items.length; i += ITEMS_PER_PAGE) {
+      const pageItems = items.slice(i, i + ITEMS_PER_PAGE);
+      const pageIndex = Math.floor(i / ITEMS_PER_PAGE) + 1;
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'preview-wrapper';
+      
+      let html = `
+        <div class="preview-container" id="poster_page_${pageIndex}">
+          <div class="poster">
+            <div class="poster-header-text">${headerText}</div>
+            <div class="poster-list">
       `;
+      
+      pageItems.forEach(item => {
+        const finalPrice = item.buyPrice + currentMarkup;
+        html += `
+          <div class="poster-item">
+            <div class="p-name">${item.name}</div>
+            <div class="p-price">${finalPrice.toLocaleString('ru-RU')} ₽</div>
+          </div>
+        `;
+      });
+
+      html += `
+            </div>
+            <div class="poster-footer">
+              <div class="footer-title">💳 Доступна рассрочка</div>
+              <div class="footer-sub">Без банков и переплат</div>
+              <div class="footer-title" style="margin-top: 8px;">🔥 Предзаказ ВЫГОДНЕЕ!</div>
+              <div class="footer-sub">${depositText}</div>
+              <div style="font-size: 12px; color: #aaa; margin-top: 15px;">Заказ по телефону / WhatsApp:</div>
+              <div class="footer-phone">+7 988 783-66-77</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-save-page" onclick="saveSingleImage(${pageIndex})">📥 Скачать эту картинку</button>
+      `;
+      
+      wrapper.innerHTML = html;
+      outputContainer.appendChild(wrapper);
+    }
+  }
+
+  // СПЕЦИАЛЬНО ДЛЯ IPHONE
+  window.saveSingleImage = function(pageIndex) {
+    const element = document.getElementById(`poster_page_${pageIndex}`);
+    if (!element) return;
+
+    html2canvas(element, { scale: 2, backgroundColor: '#0f111a', useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Создаем ссылку
+      const link = document.createElement('a');
+      link.download = `iphone_prajs_${pageIndex}.png`;
+      link.href = imgData;
+      document.body.appendChild(link); // Добавляем в DOM (нужно для iOS)
+      link.click(); // Эмулируем клик
+      document.body.removeChild(link);
+      
     });
-    listWrap.innerHTML = html;
   }
 
   window.clearAll = function() {
     document.getElementById('textInput').value = '';
-    document.getElementById('posterList').innerHTML = '<div class="empty-text">Вставьте текст и нажмите "Рассчитать"</div>';
     document.getElementById('markupBox').style.display = 'none';
-    document.getElementById('posterHeader').innerHTML = "ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ";
-    document.getElementById('footerDeposit').textContent = "Аванс всего 3000 ₽. Экономьте!";
+    document.getElementById('postersOutput').innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;">Вставьте текст и нажмите "Рассчитать"</div>';
     items = [];
-  }
-
-  window.downloadImage = function() {
-    if (items.length === 0) return alert('Сначала нажмите "Рассчитать"');
-    
-    const posterElement = document.getElementById('posterContainer');
-    html2canvas(posterElement, { scale: 2, backgroundColor: '#0f111a', useCORS: true }).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) { 
-         const win = window.open(); 
-         win.document.write('<img src="' + imgData + '" style="width:100%;" />'); 
-      } else { 
-         const link = document.createElement('a'); link.download = `vizitka.png`; link.href = imgData; link.click(); 
-      }
-    });
   }
 
   window.copyText = function() {
@@ -228,14 +230,17 @@
       text += `▪️ ${item.name}\n   Цена: *${finalPrice.toLocaleString('ru-RU')} ₽*\n\n`;
     });
     
-    // Добавляем информацию про аванс в текст
     text += "💳 Доступна рассрочка\n";
-    text += document.getElementById('footerDeposit').textContent + "\n\n";
+    text += depositText + "\n\n";
     text += "📞 Заказ: +7 988 783-66-77";
     
     navigator.clipboard.writeText(text).then(() => { 
       alert("Текст скопирован! Вставьте его в WhatsApp."); 
     });
+  }
+  
+  window.onload = function() {
+    document.getElementById('postersOutput').innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;">Вставьте текст и нажмите "Рассчитать"</div>';
   }
 </script>
 </body>
