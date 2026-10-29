@@ -46,7 +46,6 @@
   .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-bottom: 10px; overflow: hidden;}
   .poster { padding: 30px 20px; text-align: center; border-radius: 22px; background: radial-gradient(circle at top, #1a0e12 0%, #050508 60%); }
   
-  /* Заголовки витрины */
   .poster-brand { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 4px; letter-spacing: 1px;}
   .poster-subtitle { font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;}
   .poster-header-text { text-align: center; margin-bottom: 20px; font-size: 13px; color: #f5c76a; font-weight: 700; line-height: 1.4;}
@@ -123,37 +122,40 @@
       if (!cleanLine) return;
       let lowerLine = cleanLine.toLowerCase();
 
-      // 1. Ищем информацию о выдаче
+      // 1. Заголовок (Выдача, Предзаказ)
       if (lowerLine.includes('выдача') || lowerLine.includes('пред заказ') || lowerLine.includes('предзаказ')) {
           headerLines.push(cleanLine); return;
       }
 
-      // 2. Ищем инфу о брони
+      // 2. Аванс/Бронь
       if (lowerLine.includes('бронь') || lowerLine.includes('аванс') || lowerLine.includes('оплата при получении')) {
           depositFound = cleanLine; return;
       }
 
-      // 3. Ищем количество (шт, штук, или просто число в конце строки)
+      // 3. Ищем КОЛИЧЕСТВО (только если есть слово "шт", "штук" и т.д.)
       let qty = 1;
-      const qtyMatch = cleanLine.match(/(\d+)\s*(шт|штук|штуки|шт\.)?/i);
+      const qtyRegex = /(\d+)\s*(шт|штук|штуки|шт\.)/i;
+      const qtyMatch = cleanLine.match(qtyRegex);
       if (qtyMatch) {
-         // Если есть слово "шт", берем число перед ним
-         if (qtyMatch[2]) qty = Number(qtyMatch[1]);
-         // Если в конце строки стоит -2 или 2 без слова "шт", тоже считаем количеством
-         else if (cleanLine.match(/[-—]\s*\d+$/)) qty = Number(qtyMatch[1]);
+         qty = Number(qtyMatch[1]);
       }
 
-      // 4. Ищем цену (от 4 до 7 цифр)
-      const priceMatch = cleanLine.match(/\b(\d{4,7})\b/);
-      if (priceMatch) {
-        let price = Number(priceMatch[1]);
+      // 4. Ищем ЦЕНУ (от 4 до 7 цифр). 
+      // Берем числа, которые НЕ являются количеством
+      let price = 0;
+      const priceRegex = /\b(\d{4,7})\b/g;
+      let matches = [...cleanLine.matchAll(priceRegex)];
+      
+      if (matches.length > 0) {
+        // Берем последнее найденное число как цену
+        price = Number(matches[matches.length - 1][1]);
         
         // Название — всё до цены
-        let namePart = cleanLine.substring(0, priceMatch.index).replace(/[-—@]/g, ' ').trim();
+        let namePart = cleanLine.substring(0, matches[matches.length - 1].index).replace(/[-—@]/g, ' ').trim();
         namePart = namePart.replace(/iPhone/gi, '').replace(/[()]/g, '').trim();
         namePart = namePart.toUpperCase().replace(/\s+/g, ' ');
 
-        if (namePart.length > 2) {
+        if (namePart.length > 2 && price > 0) {
           items.push({ name: namePart, buyPrice: price, qty: qty });
         }
       }
@@ -162,7 +164,6 @@
     if (items.length === 0) return alert('Не найдено ни одной цены.');
 
     if (headerLines.length > 0) {
-        // Форматируем заголовок, чтобы он был как на скрине (ПРЕДЗАКАЗ...)
         let cleanHeader = headerLines.join(' ').toUpperCase();
         headerText = cleanHeader;
     }
