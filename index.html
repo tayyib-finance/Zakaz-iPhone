@@ -22,7 +22,7 @@
 
   /* Блок ввода */
   .input-box { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border); }
-  textarea { width: 100%; height: 120px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; resize: vertical; outline: none; margin-bottom: 12px; font-family: monospace; line-height: 1.5;}
+  textarea { width: 100%; height: 140px; background: #0f111a; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; resize: vertical; outline: none; margin-bottom: 12px; font-family: monospace; line-height: 1.5;}
   textarea::placeholder { color: #64748b; }
   
   .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -32,10 +32,11 @@
   .btn-clear { background: #334155; color: #fff; }
   .btn-wa { background: var(--blue); color: #fff; }
 
-  /* Блок наценки и статистики */
+  /* Блок наценки */
   .markup-box { background: var(--bg-card); border-radius: 12px; padding: 12px; margin-bottom: 20px; display: none; border: 1px solid var(--green); align-items: center; justify-content: space-between; gap: 10px;}
   .markup-box input { width: 120px; background: #0f111a; border: 1px solid #475569; color: var(--green); padding: 10px; border-radius: 8px; font-size: 16px; font-weight: 700; text-align: center; outline: none;}
 
+  /* Блок статистики */
   .stats-box { background: #1e3a8a; border: 1px solid #3b82f6; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none; justify-content: space-between; align-items: center; color: #fff;}
   .stats-title { font-size: 13px; color: #93c5fd; margin-bottom: 4px; font-weight: 600;}
   .stats-value { font-size: 18px; font-weight: 800;}
@@ -45,21 +46,24 @@
   .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-bottom: 10px; overflow: hidden;}
   .poster { padding: 30px 20px; text-align: center; border-radius: 22px; background: radial-gradient(circle at top, #1a0e12 0%, #050508 60%); }
   
+  /* Заголовки витрины */
+  .poster-brand { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 4px; letter-spacing: 1px;}
+  .poster-subtitle { font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;}
   .poster-header-text { text-align: center; margin-bottom: 20px; font-size: 13px; color: #f5c76a; font-weight: 700; line-height: 1.4;}
   
   .poster-list { display: flex; flex-direction: column; gap: 10px; }
   .poster-item { border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; text-align: left; gap: 10px; background: rgba(30, 20, 20, 0.5); border: 1px solid rgba(255,255,255,0.05); }
   .p-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.3; flex: 1;}
+  .p-qty { font-size: 11px; background: #334155; color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 4px;}
   .p-price { font-size: 18px; font-weight: 800; white-space: nowrap; color: var(--green);}
   
   .poster-footer { margin-top: 25px; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; text-align: center; border: 1px solid #3f2e14; background: rgba(63, 46, 20, 0.2); }
   .footer-title { font-size: 14px; font-weight: 800; color: #f5c76a; }
   .footer-sub { font-size: 12px; color: #aaa;}
   .footer-phone { margin-top: 10px; padding-top: 12px; border-top: 1px dashed #5a4020; font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--green); }
-  .empty-text { font-size: 13px; color: #64748b; margin: 30px 0;}
-
-  /* Кнопка скачивания */
+  
   .btn-save-page { background: #e11d48; color: #fff; width: 100%; padding: 12px; font-size: 15px; margin-bottom: 15px; border-radius: 8px;}
+  .empty-text { font-size: 13px; color: #64748b; margin: 30px 0;}
 </style>
 </head>
 <body>
@@ -78,13 +82,11 @@
     </div>
   </div>
 
-  <!-- Блок наценки -->
   <div class="markup-box" id="markupBox">
     <div style="font-size: 14px; font-weight: 700;">Наценка (₽):</div>
     <input type="number" id="markupInput" value="3000" oninput="applyMarkup()">
   </div>
 
-  <!-- Блок статистики (НЕ ПОПАДЕТ НА КАРТИНКУ) -->
   <div class="stats-box" id="statsBox">
     <div>
       <div class="stats-title">Количество товаров:</div>
@@ -106,7 +108,6 @@
   let currentMarkup = 3000;
   let headerText = "ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ";
   let depositText = "Аванс всего 3000 ₽. Экономьте!";
-  const ITEMS_PER_PAGE = 8; 
 
   function processText() {
     const text = document.getElementById('textInput').value;
@@ -120,34 +121,52 @@
     lines.forEach(line => {
       let cleanLine = line.trim();
       if (!cleanLine) return;
+      let lowerLine = cleanLine.toLowerCase();
 
-      if (cleanLine.toLowerCase().includes('выдача') || cleanLine.toLowerCase().includes('предзаказ')) {
+      // 1. Ищем информацию о выдаче
+      if (lowerLine.includes('выдача') || lowerLine.includes('пред заказ') || lowerLine.includes('предзаказ')) {
           headerLines.push(cleanLine); return;
       }
 
-      if (cleanLine.toLowerCase().includes('бронь') || cleanLine.toLowerCase().includes('аванс') || cleanLine.toLowerCase().includes('оплата при получении')) {
+      // 2. Ищем инфу о брони
+      if (lowerLine.includes('бронь') || lowerLine.includes('аванс') || lowerLine.includes('оплата при получении')) {
           depositFound = cleanLine; return;
       }
 
-      const numbers = cleanLine.match(/\b\d{1,3}(?:\.\d{3})+|\b\d{4,7}\b/g);
-      
-      if (numbers && numbers.length > 0) {
-        let nums = numbers.map(n => Number(n.replace(/\./g, '')));
-        let price = Math.max(...nums);
+      // 3. Ищем количество (шт, штук, или просто число в конце строки)
+      let qty = 1;
+      const qtyMatch = cleanLine.match(/(\d+)\s*(шт|штук|штуки|шт\.)?/i);
+      if (qtyMatch) {
+         // Если есть слово "шт", берем число перед ним
+         if (qtyMatch[2]) qty = Number(qtyMatch[1]);
+         // Если в конце строки стоит -2 или 2 без слова "шт", тоже считаем количеством
+         else if (cleanLine.match(/[-—]\s*\d+$/)) qty = Number(qtyMatch[1]);
+      }
+
+      // 4. Ищем цену (от 4 до 7 цифр)
+      const priceMatch = cleanLine.match(/\b(\d{4,7})\b/);
+      if (priceMatch) {
+        let price = Number(priceMatch[1]);
         
-        let lastMatchStr = numbers[numbers.length - 1]; 
-        let namePart = cleanLine.substring(0, cleanLine.lastIndexOf(lastMatchStr)).replace(/[-—@]/g, ' ').trim();
-        
+        // Название — всё до цены
+        let namePart = cleanLine.substring(0, priceMatch.index).replace(/[-—@]/g, ' ').trim();
         namePart = namePart.replace(/iPhone/gi, '').replace(/[()]/g, '').trim();
         namePart = namePart.toUpperCase().replace(/\s+/g, ' ');
 
-        if (namePart.length > 2) items.push({ name: namePart, buyPrice: price });
+        if (namePart.length > 2) {
+          items.push({ name: namePart, buyPrice: price, qty: qty });
+        }
       }
     });
 
     if (items.length === 0) return alert('Не найдено ни одной цены.');
 
-    if (headerLines.length > 0) headerText = headerLines.join('<br>');
+    if (headerLines.length > 0) {
+        // Форматируем заголовок, чтобы он был как на скрине (ПРЕДЗАКАЗ...)
+        let cleanHeader = headerLines.join(' ').toUpperCase();
+        headerText = cleanHeader;
+    }
+
     if (depositFound) depositText = depositFound;
 
     document.getElementById('markupBox').style.display = 'flex';
@@ -166,60 +185,60 @@
 
     if (items.length === 0) return;
 
-    // Обновляем статистику наверху экрана
+    // Считаем общую статистику
     let totalSumAll = 0;
-    items.forEach(item => totalSumAll += (item.buyPrice + currentMarkup));
-    document.getElementById('statCount').textContent = items.length + ' шт';
+    let totalQtyAll = 0;
+    
+    items.forEach(item => {
+        totalSumAll += (item.buyPrice + currentMarkup) * item.qty;
+        totalQtyAll += item.qty;
+    });
+    
+    document.getElementById('statCount').textContent = totalQtyAll + ' шт';
     document.getElementById('statTotal').textContent = totalSumAll.toLocaleString('ru-RU') + ' ₽';
 
-    // Рисуем картинки для скачивания
-    for (let i = 0; i < items.length; i += ITEMS_PER_PAGE) {
-      const pageItems = items.slice(i, i + ITEMS_PER_PAGE);
-      const pageIndex = Math.floor(i / ITEMS_PER_PAGE) + 1;
+    // Рисуем картинку
+    let html = `
+      <div class="preview-container" id="poster_page_1">
+        <div class="poster">
+          <div class="poster-brand">FREE ZONE</div>
+          <div class="poster-subtitle">ЛУЧШИЕ ЦЕНЫ</div>
+          <div class="poster-header-text">${headerText}</div>
+          <div class="poster-list">
+    `;
+    
+    items.forEach(item => {
+      const finalPrice = item.buyPrice + currentMarkup;
+      const qtyLabel = item.qty > 1 ? `<span class="p-qty">${item.qty} шт</span>` : '';
       
-      const wrapper = document.createElement('div');
-      wrapper.className = 'preview-wrapper';
-      
-      let html = `
-        <div class="preview-container" id="poster_page_${pageIndex}">
-          <div class="poster">
-            <div class="poster-header-text">${headerText}</div>
-            <div class="poster-list">
-      `;
-      
-      pageItems.forEach(item => {
-        const finalPrice = item.buyPrice + currentMarkup;
-        html += `
-          <div class="poster-item">
-            <div class="p-name">${item.name}</div>
-            <div class="p-price">${finalPrice.toLocaleString('ru-RU')} ₽</div>
-          </div>
-        `;
-      });
-
-      // ВАЖНО: Здесь нет блока с общей суммой, чтобы он не попал на скриншот
       html += `
-            </div>
-            <div class="poster-footer">
-              <div class="footer-title">💳 Доступна рассрочка</div>
-              <div class="footer-sub">Без банков и переплат</div>
-              <div class="footer-title" style="margin-top: 8px;">🔥 Предзаказ ВЫГОДНЕЕ!</div>
-              <div class="footer-sub">${depositText}</div>
-              <div style="font-size: 12px; color: #aaa; margin-top: 15px;">Заказ по телефону / WhatsApp:</div>
-              <div class="footer-phone">+7 988 783-66-77</div>
-            </div>
+        <div class="poster-item">
+          <div class="p-name">${item.name} ${qtyLabel}</div>
+          <div class="p-price">${finalPrice.toLocaleString('ru-RU')} ₽</div>
+        </div>
+      `;
+    });
+
+    html += `
+          </div>
+          <div class="poster-footer">
+            <div class="footer-title">💳 Доступна рассрочка</div>
+            <div class="footer-sub">Без банков и переплат</div>
+            <div class="footer-title" style="margin-top: 8px;">🔥 Предзаказ ВЫГОДНЕЕ!</div>
+            <div class="footer-sub">${depositText}</div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 15px;">Заказ по телефону / WhatsApp:</div>
+            <div class="footer-phone">+7 988 783-66-77</div>
           </div>
         </div>
-        <button class="btn btn-save-page" onclick="saveSingleImage(${pageIndex})">📥 Нажми чтобы открыть фото</button>
-      `;
-      
-      wrapper.innerHTML = html;
-      outputContainer.appendChild(wrapper);
-    }
+      </div>
+      <button class="btn btn-save-page" onclick="saveSingleImage()">📥 Нажми чтобы открыть фото</button>
+    `;
+    
+    outputContainer.innerHTML = html;
   }
 
-  window.saveSingleImage = function(pageIndex) {
-    const element = document.getElementById(`poster_page_${pageIndex}`);
+  window.saveSingleImage = function() {
+    const element = document.getElementById(`poster_page_1`);
     if (!element) return;
 
     const btn = event.target;
@@ -250,16 +269,19 @@
   window.copyText = function() {
     if (items.length === 0) return alert('Сначала нажмите "Рассчитать"');
 
-    let text = "🔥 *В НАЛИЧИИ*\n\n";
+    let text = "🔥 *FREE ZONE (В наличии)*\n\n";
     let totalSum = 0;
+    let totalQty = 0;
 
     items.forEach(item => {
       const finalPrice = item.buyPrice + currentMarkup;
-      totalSum += finalPrice;
-      text += `▪️ ${item.name}\n   Цена: *${finalPrice.toLocaleString('ru-RU')} ₽*\n\n`;
+      totalSum += finalPrice * item.qty;
+      totalQty += item.qty;
+      const qtyStr = item.qty > 1 ? ` (${item.qty} шт)` : '';
+      text += `▪️ ${item.name}${qtyStr}\n   Цена: *${finalPrice.toLocaleString('ru-RU')} ₽*\n\n`;
     });
     
-    text += `💰 *ИТОГО СУММА: ${totalSum.toLocaleString('ru-RU')} ₽*\n\n`;
+    text += `💰 *ИТОГО: ${totalQty} шт на сумму ${totalSum.toLocaleString('ru-RU')} ₽*\n\n`;
     text += "💳 Доступна рассрочка\n";
     text += depositText + "\n\n";
     text += "📞 Заказ: +7 988 783-66-77";
