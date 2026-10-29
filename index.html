@@ -46,9 +46,9 @@
   .preview-container { background: #000; border-radius: 24px; padding: 2px; border: 1px solid #333; margin-bottom: 10px; overflow: hidden;}
   .poster { padding: 30px 20px; text-align: center; border-radius: 22px; background: radial-gradient(circle at top, #1a0e12 0%, #050508 60%); }
   
+  /* Заголовки витрины */
   .poster-brand { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 4px; letter-spacing: 1px;}
-  .poster-subtitle { font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;}
-  .poster-header-text { text-align: center; margin-bottom: 20px; font-size: 13px; color: #f5c76a; font-weight: 700; line-height: 1.4;}
+  .poster-subtitle { font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; margin-bottom: 25px; letter-spacing: 1px;}
   
   .poster-list { display: flex; flex-direction: column; gap: 10px; }
   .poster-item { border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; text-align: left; gap: 10px; background: rgba(30, 20, 20, 0.5); border: 1px solid rgba(255,255,255,0.05); }
@@ -105,7 +105,6 @@
 <script>
   let items = [];
   let currentMarkup = 3000;
-  let headerText = "ПРЕДЗАКАЗ ДО 17:00<br>ВЫДАЧА НА СУББОТУ";
   let depositText = "Аванс всего 3000 ₽. Экономьте!";
 
   function processText() {
@@ -114,7 +113,6 @@
 
     const lines = text.split('\n');
     items = [];
-    let headerLines = [];
     let depositFound = "";
 
     lines.forEach(line => {
@@ -122,14 +120,14 @@
       if (!cleanLine) return;
       let lowerLine = cleanLine.toLowerCase();
 
-      // 1. Заголовок (Выдача, Предзаказ)
-      if (lowerLine.includes('выдача') || lowerLine.includes('пред заказ') || lowerLine.includes('предзаказ')) {
-          headerLines.push(cleanLine); return;
-      }
-
-      // 2. Аванс/Бронь
+      // 1. Ищем инфу о брони (если есть)
       if (lowerLine.includes('бронь') || lowerLine.includes('аванс') || lowerLine.includes('оплата при получении')) {
           depositFound = cleanLine; return;
+      }
+
+      // 2. Игнорируем строки с "Выдача" или "Предзаказ" (они больше не нужны)
+      if (lowerLine.includes('выдача') || lowerLine.includes('пред заказ') || lowerLine.includes('предзаказ')) {
+          return;
       }
 
       // 3. Ищем КОЛИЧЕСТВО (только если есть слово "шт", "штук" и т.д.)
@@ -141,16 +139,13 @@
       }
 
       // 4. Ищем ЦЕНУ (от 4 до 7 цифр). 
-      // Берем числа, которые НЕ являются количеством
       let price = 0;
       const priceRegex = /\b(\d{4,7})\b/g;
       let matches = [...cleanLine.matchAll(priceRegex)];
       
       if (matches.length > 0) {
-        // Берем последнее найденное число как цену
         price = Number(matches[matches.length - 1][1]);
         
-        // Название — всё до цены
         let namePart = cleanLine.substring(0, matches[matches.length - 1].index).replace(/[-—@]/g, ' ').trim();
         namePart = namePart.replace(/iPhone/gi, '').replace(/[()]/g, '').trim();
         namePart = namePart.toUpperCase().replace(/\s+/g, ' ');
@@ -162,11 +157,6 @@
     });
 
     if (items.length === 0) return alert('Не найдено ни одной цены.');
-
-    if (headerLines.length > 0) {
-        let cleanHeader = headerLines.join(' ').toUpperCase();
-        headerText = cleanHeader;
-    }
 
     if (depositFound) depositText = depositFound;
 
@@ -186,7 +176,6 @@
 
     if (items.length === 0) return;
 
-    // Считаем общую статистику
     let totalSumAll = 0;
     let totalQtyAll = 0;
     
@@ -198,13 +187,12 @@
     document.getElementById('statCount').textContent = totalQtyAll + ' шт';
     document.getElementById('statTotal').textContent = totalSumAll.toLocaleString('ru-RU') + ' ₽';
 
-    // Рисуем картинку
+    // Рисуем картинку БЕЗ блока с датой
     let html = `
       <div class="preview-container" id="poster_page_1">
         <div class="poster">
           <div class="poster-brand">FREE ZONE</div>
           <div class="poster-subtitle">ЛУЧШИЕ ЦЕНЫ</div>
-          <div class="poster-header-text">${headerText}</div>
           <div class="poster-list">
     `;
     
