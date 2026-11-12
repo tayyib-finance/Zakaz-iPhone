@@ -3,31 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Генератор витрины и Сравнение цен</title>
+<title>Генератор витрины</title>
 <style>
   :root { --bg-main:#0f111a; --bg-card:#1a1d2d; --text-muted:#8b92a5; --green:#4ade80; --blue:#3b82f6; --border:#2a2e42; }
   * { box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
   body { background:var(--bg-main); color:#fff; margin:0; padding:16px 16px 40px; }
   .container { max-width:600px; margin:0 auto; }
+  
   .tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
   .tab { background:var(--bg-card); color:var(--text-muted); border:1px solid var(--border); border-radius:10px; padding:11px; font-size:14px; font-weight:800; cursor:pointer; }
   .tab.on { color:#000; background:var(--green); border-color:var(--green); }
+  
   .input-box { background:var(--bg-card); border-radius:16px; padding:16px; margin-bottom:20px; border:1px solid var(--border); }
   textarea { width:100%; height:140px; background:#0f111a; border:1px solid var(--border); color:#fff; padding:12px; border-radius:8px; font-size:14px; resize:vertical; outline:none; margin-bottom:12px; font-family:monospace; line-height:1.5; }
+  
   .btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
   .btn { padding:12px; border-radius:8px; border:none; font-weight:700; font-size:14px; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:6px; }
   .btn-calc { background:var(--green); color:#000; } .btn-clear { background:#334155; color:#fff; } .btn-wa { background:var(--blue); color:#fff; }
+  
   .markup-box { background:var(--bg-card); border-radius:12px; padding:12px; margin-bottom:20px; display:none; border:1px solid var(--green); align-items:center; justify-content:space-between; gap:10px; }
   .markup-box input { width:120px; background:#0f111a; border:1px solid #475569; color:var(--green); padding:10px; border-radius:8px; font-size:16px; font-weight:700; text-align:center; outline:none; }
+  
   .stats-box { background:#1e3a8a; border:1px solid #3b82f6; border-radius:12px; padding:15px; margin-bottom:20px; display:none; justify-content:space-between; align-items:center; }
   .stats-title { font-size:13px; color:#93c5fd; margin-bottom:4px; font-weight:600; } .stats-value { font-size:18px; font-weight:800; }
-  .hint-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; font-size:12px; color:var(--text-muted); }
-  .btn-reset { background:#334155; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
-  .themes { display:flex; gap:8px; overflow-x:auto; margin-bottom:12px; padding-bottom:4px; }
+  
+  .themes { display:flex; gap:8px; overflow-x:auto; margin-bottom:16px; padding-bottom:4px; }
   .theme-btn { background:var(--bg-card); color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; font-weight:700; white-space:nowrap; display:flex; align-items:center; gap:6px; cursor:pointer; }
   .theme-btn.on { border-color:#fff; }
   .sw { width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,.4); display:inline-block; }
-  .preview-container { border-radius:24px; border:1px solid rgba(128,128,128,.35); margin-bottom:10px; overflow:hidden; }
+
+  .seg { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px; }
+  .seg button { background:var(--bg-card); color:var(--text-muted); border:1px solid var(--border); border-radius:10px; padding:10px 4px; font-size:12px; font-weight:800; cursor:pointer; }
+  .seg button.on { background:var(--green); color:#000; border-color:var(--green); }
+  
+  .blk-card { margin-bottom:22px; border-radius:24px; border:1px solid rgba(128,128,128,.35); overflow:hidden; }
+  .blk-actions { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-card); border-bottom:1px solid var(--border); }
+  .blk-label { font-size:13px; font-weight:800; color:#f5c76a; }
+  .btn-photo { background:#e11d48; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; }
+  .btn-txt { background:#3b82f6; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; }
+
   .poster { padding:30px 20px; text-align:center; }
   .poster-brand { font-size:24px; font-weight:900; margin-bottom:4px; letter-spacing:1px; }
   .poster-subtitle { font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:25px; letter-spacing:1px; }
@@ -45,19 +59,11 @@
   .footer-title { font-size:14px; font-weight:800; } .footer-sub { font-size:12px; }
   .footer-label { font-size:12px; margin-top:15px; }
   .footer-phone { margin-top:10px; padding-top:12px; border-top:1px dashed; font-size:18px; font-weight:800; letter-spacing:1px; }
+
   [contenteditable] { -webkit-user-select:text; user-select:text; outline:none; min-width:30px; border-radius:6px; }
   [contenteditable]:focus { outline:1px dashed #888; outline-offset:3px; background:rgba(128,128,128,.15); }
   .custom-price { text-decoration:underline dotted; text-underline-offset:4px; }
-  .btn-save-page { background:#e11d48; color:#fff; width:100%; padding:12px; font-size:15px; margin-bottom:15px; border-radius:8px; }
-  .blk-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:15px; }
-  .blk-h { font-size:14px; font-weight:800; margin-bottom:4px; }
-  .blk-hint { font-size:12px; color:var(--text-muted); margin-bottom:8px; }
-  .blk { padding:10px 0; border-top:1px solid var(--border); }
-  .blk-t { font-size:13px; font-weight:800; margin-bottom:8px; }
-  .blk-t span { color:var(--text-muted); font-weight:600; font-size:11px; margin-left:4px; }
-  .blk-b { display:flex; flex-wrap:wrap; gap:6px; }
-  .chip { background:#334155; color:#fff; border:none; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer; }
-  .chip.main { background:var(--green); color:#000; }
+
   .name-input { width:100%; background:#0f111a; border:1px solid var(--border); color:#fff; padding:10px; border-radius:8px; font-size:14px; font-weight:700; outline:none; margin-bottom:8px; }
   .cmp-sum { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
   .cmp-chip { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:10px; font-size:12px; color:var(--text-muted); }
@@ -91,7 +97,6 @@
         <button class="btn btn-calc" onclick="processText()">Рассчитать</button>
         <button class="btn btn-clear" onclick="clearAll()">Очистить</button>
       </div>
-      <div class="btn-grid"><button class="btn btn-wa" onclick="copyText()">📱 Текст в WhatsApp</button></div>
     </div>
 
     <div class="markup-box" id="markupBox">
@@ -104,7 +109,9 @@
       <div style="text-align:right;"><div class="stats-title">Общая сумма:</div><div class="stats-value" id="statTotal">0 ₽</div></div>
     </div>
 
-    <div id="postersOutput"></div>
+    <div id="postersOutput">
+      <div style="text-align:center;padding:30px;color:#64748b;">Вставьте текст и нажмите "Рассчитать"</div>
+    </div>
   </div>
 
   <div id="viewCmp" style="display:none;">
@@ -125,9 +132,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
   let items = [];
-  let blocks = [];
   let cmpRows = [];
   let currentMarkup = 3000;
+  let currentViewBlock = 'all'; // 'all', 'model', 'memory'
   const defaultAd = {
     t1: '💳 Доступна рассрочка',
     s1: 'Без банков и переплат',
@@ -164,24 +171,14 @@
 
   const fmt = n => n.toLocaleString('ru-RU');
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  
   const title = s => s.replace(/\biphone\b/gi, 'iPhone').replace(/(^|\s)(\S)/g, (m,a,b)=>a+b.toUpperCase()).replace(/\bIphone\b/g,'iPhone');
-  
   const finalPrice = it => (it.custom != null ? it.custom : it.buyPrice + currentMarkup);
-  const rgba = (hex, a) => {
-    const n = parseInt(hex.slice(1), 16);
-    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
-  };
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
 
-  // Нормализация опечаток и кириллицы
   function normalizeName(s) {
-    return s
-      .replace(/\bпро\b/gi, 'Pro')
-      .replace(/\bмакс\b/gi, 'Max')
-      .replace(/\bбургун\w*/gi, 'Burgundy')
-      .replace(/\bглас\w*/gi, 'Glacier')
-      .replace(/\bгласир\w*/gi, 'Glacier')
-      .replace(/\bблэк\b/gi, 'Black')
+    return s.replace(/\bпро\b/gi, 'Pro').replace(/\bмакс\b/gi, 'Max')
+      .replace(/\bбургун\w*/gi, 'Burgundy').replace(/\bглас\w*/gi, 'Glacier')
+      .replace(/\bгласир\w*/gi, 'Glacier').replace(/\bблэк\b/gi, 'Black')
       .replace(/\bсильвер\b/gi, 'Silver');
   }
 
@@ -191,12 +188,9 @@
       [/BLACK|NIGHT|ЧЕРН|ЧЁРН|SPACE|GRAY|GREY|GRAPHITE|НАЙТ/, '⚫'],
       [/SILVER|WHITE|СЕРЕБР|БЕЛ|STARLIGHT/, '⚪'],
       [/BLUE|СИН|ГОЛУБ|GLACIER|SKY|ГЛЕЙС|ГЛЭЙС|ГЛАС/, '🔵'],
-      [/ORANGE|ОРАНЖ/, '🟠'],
-      [/RED|BURGUNDY|БОРД|БУРГ/, '🔴'],
-      [/GREEN|ЗЕЛ/, '🟢'],
-      [/GOLD|YELLOW|ЖЕЛТ|ЖЁЛТ|ЗОЛОТ/, '🟡'],
-      [/PURPLE|VIOLET|LAVENDER|ФИОЛ|СИРЕН/, '🟣'],
-      [/PINK|РОЗ/, '🩷'],
+      [/ORANGE|ОРАНЖ/, '🟠'], [/RED|BURGUNDY|БОРД|БУРГ/, '🔴'],
+      [/GREEN|ЗЕЛ/, '🟢'], [/GOLD|YELLOW|ЖЕЛТ|ЖЁЛТ|ЗОЛОТ/, '🟡'],
+      [/PURPLE|VIOLET|LAVENDER|ФИОЛ|СИРЕН/, '🟣'], [/PINK|РОЗ/, '🩷'],
       [/TITANIUM|NATURAL|DESERT|ТИТАН|БЕЖ/, '🟤']
     ];
     for (const [re, dot] of map) if (re.test(c)) return dot;
@@ -205,7 +199,6 @@
 
   function parseName(name) {
     const r = { model: name, storage: '', raw: '', gb: 0, color: '', sim: 'eSIM' };
-    // Поддержка 1 TB / 1ТБ / 1 ТБ и т.д.
     const m = name.match(/^(.*?)\s+(128|256|512|1\s?[TТ][BБ]|2\s?[TТ][BБ])\b\s*(.*)$/i);
     let rest = name;
     if (m) {
@@ -232,16 +225,13 @@
   }
 
   function sortList(arr) {
-    return arr
-      .map((it, idx) => ({ it, idx }))
-      .sort((a, b) =>
-        (SIM_ORDER.indexOf(a.it.sim) - SIM_ORDER.indexOf(b.it.sim)) ||
-        ((parseInt(b.it.model) || 0) - (parseInt(a.it.model) || 0)) ||
-        (modelRank(a.it.model) - modelRank(b.it.model)) ||
-        a.it.model.localeCompare(b.it.model) ||
-        (a.it.gb - b.it.gb) ||
-        (a.idx - b.idx))
-      .map(x => x.it);
+    return arr.map((it, idx) => ({ it, idx })).sort((a, b) =>
+      (SIM_ORDER.indexOf(a.it.sim) - SIM_ORDER.indexOf(b.it.sim)) ||
+      ((parseInt(b.it.model) || 0) - (parseInt(a.it.model) || 0)) ||
+      (modelRank(a.it.model) - modelRank(b.it.model)) ||
+      a.it.model.localeCompare(b.it.model) ||
+      (a.it.gb - b.it.gb) ||
+      (a.idx - b.idx)).map(x => x.it);
   }
 
   function parseList(text) {
@@ -251,10 +241,7 @@
       const cleanLine = line.trim();
       if (!cleanLine) return;
       const low = cleanLine.toLowerCase();
-      
-      // Игнорируем AED, доллары, предзаказы
       if (/\b(aed|coming|\$|€)\b/i.test(cleanLine)) return;
-      
       if (low.includes('бронь') || low.includes('аванс') || low.includes('оплата при получении')) { deposit = cleanLine; return; }
       if (low.includes('выдача') || low.includes('пред заказ') || low.includes('предзаказ')) return;
 
@@ -285,6 +272,11 @@
     document.getElementById('tabCmp').classList.toggle('on', v === 'cmp');
   };
 
+  window.setBlockView = function (view) {
+    currentViewBlock = view;
+    renderPosters();
+  };
+
   function processText() {
     const text = document.getElementById('textInput').value;
     if (!text.trim()) return alert('Вставьте текст');
@@ -292,13 +284,9 @@
     if (list.length === 0) return alert('Не найдено ни одной цены.');
     if (deposit) ad.s2 = deposit;
     items = sortList(list);
-    showBoxes();
-    renderPosters();
-  }
-
-  function showBoxes() {
     document.getElementById('markupBox').style.display = 'flex';
     document.getElementById('statsBox').style.display = 'flex';
+    renderPosters();
   }
 
   window.applyMarkup = function () {
@@ -325,16 +313,15 @@
     return list;
   }
 
-  function posterHTML(list, id, ed) {
+  function posterHTML(list, id, ed, footerData = ad) {
     const t = THEMES[themeIdx];
     const models = uniqueModels();
     const mcol = m => t.pal[Math.max(0, models.indexOf(m)) % t.pal.length];
-    const K = key => ed ? ` contenteditable="true" data-k="${key}"` : '';
+    const K = key => ed ? ` contenteditable="true" data-k="${key}" data-block="${id}"` : '';
 
-    let h = `<div class="preview-container" id="${id}" style="background:${t.base};">
-      <div class="poster" style="background:${t.pbg};color:${t.txt};">
-      <div class="poster-brand" style="color:${t.brand};">FREE ZONE</div>
-      <div class="poster-subtitle" style="color:${t.sub};">ЛУЧШИЕ ЦЕНЫ</div><div class="poster-list">`;
+    let h = `<div class="poster" id="${id}" style="background:${t.pbg};color:${t.txt};">`;
+    if (ed) h += `<div class="poster-brand" style="color:${t.brand};">FREE ZONE</div><div class="poster-subtitle" style="color:${t.sub};">ЛУЧШИЕ ЦЕНЫ</div>`;
+    h += `<div class="poster-list">`;
 
     let lastSim = null, lastModel = null;
     list.forEach(({ it, i }) => {
@@ -349,61 +336,88 @@
         lastModel = it.model;
       }
       const q = it.qty > 1 ? `<span class="p-qty">${it.qty} шт</span>` : '';
-      const pe = ed ? ` contenteditable="true" inputmode="numeric" data-i="${i}"` : '';
+      const pe = ed ? ` contenteditable="true" inputmode="numeric" data-i="${i}" data-block="${id}"` : '';
       h += `<div class="poster-item" style="background:${rgba(c, .10)};border-color:${rgba(c, .45)};">
         <div class="p-name" style="color:${t.txt};">${esc(it.name)} ${q}</div>
         <div class="p-price" style="color:${c};"><span${pe} class="price-edit${it.custom != null ? ' custom-price' : ''}">${fmt(finalPrice(it))}</span> ₽</div></div>`;
     });
 
     h += `</div><div class="poster-footer" style="background:${t.footBg};border-color:${t.footBr};">
-        <div class="footer-title" style="color:${t.ft};"${K('t1')}>${esc(ad.t1)}</div>
-        <div class="footer-sub" style="color:${t.muted};"${K('s1')}>${esc(ad.s1)}</div>
-        <div class="footer-title" style="color:${t.ft};margin-top:8px;"${K('t2')}>${esc(ad.t2)}</div>
-        <div class="footer-sub" style="color:${t.muted};"${K('s2')}>${esc(ad.s2)}</div>
-        <div class="footer-label" style="color:${t.muted};"${K('s3')}>${esc(ad.s3)}</div>
-        <div class="footer-phone" style="color:${t.phone};border-top-color:${t.footBr};"${K('phone')}>${esc(ad.phone)}</div>
-      </div></div></div>`;
+        <div class="footer-title" style="color:${t.ft};"${K('t1')}>${esc(footerData.t1)}</div>
+        <div class="footer-sub" style="color:${t.muted};"${K('s1')}>${esc(footerData.s1)}</div>
+        <div class="footer-title" style="color:${t.ft};margin-top:8px;"${K('t2')}>${esc(footerData.t2)}</div>
+        <div class="footer-sub" style="color:${t.muted};"${K('s2')}>${esc(footerData.s2)}</div>
+        <div class="footer-label" style="color:${t.muted};"${K('s3')}>${esc(footerData.s3)}</div>
+        <div class="footer-phone" style="color:${t.phone};border-top-color:${t.footBr};"${K('phone')}>${esc(footerData.phone)}</div>
+      </div></div>`;
     return h;
-  }
-
-  function blocksPanelHTML() {
-    blocks = [];
-    let h = `<div class="blk-panel"><div class="blk-h">🖼 Картинки по блокам</div>
-      <div class="blk-hint">Выберите блок — откроется отдельная картинка с текущими ценами и темой</div>`;
-    const sims = [...new Set(items.map(i => i.sim))];
-    sims.forEach(sim => {
-      blocks.push({ sim, model: null, storage: null });
-      h += `<div class="blk"><div class="blk-t">📲 ${esc(sim)}</div><div class="blk-b"><button class="chip main" onclick="saveBlock(${blocks.length - 1},event)">Весь блок ${esc(sim)}</button></div></div>`;
-      const ms = [...new Set(items.filter(i => i.sim === sim).map(i => i.model))];
-      ms.forEach(model => {
-        blocks.push({ sim, model, storage: null });
-        let btns = `<button class="chip main" onclick="saveBlock(${blocks.length - 1},event)">Вся модель</button>`;
-        const sts = [...new Set(items.filter(i => i.sim === sim && i.model === model).map(i => i.storage))];
-        sts.forEach(st => {
-          blocks.push({ sim, model, storage: st });
-          btns += `<button class="chip" onclick="saveBlock(${blocks.length - 1},event)">${esc(st || 'без памяти')}</button>`;
-        });
-        h += `<div class="blk"><div class="blk-t">${esc(model.toUpperCase())}<span>${esc(sim)}</span></div><div class="blk-b">${btns}</div></div>`;
-      });
-    });
-    return h + '</div>';
   }
 
   function renderPosters() {
     const out = document.getElementById('postersOutput');
     if (items.length === 0) return;
     updateStats();
-    const all = items.map((it, i) => ({ it, i }));
-    out.innerHTML = `
-      <div class="hint-row">
-        <span>✏️ Нажмите на цену или на текст внизу, чтобы изменить</span>
-        <button class="btn-reset" onclick="resetPrices()">↺ Сбросить цены</button>
-      </div>
+
+    let html = `
       <div class="themes">${THEMES.map((th, k) =>
         `<button class="theme-btn${k === themeIdx ? ' on' : ''}" onclick="setTheme(${k})"><span class="sw" style="background:${th.pbg}"></span>${th.name}</button>`).join('')}</div>
-      ${posterHTML(all, 'poster_page_1', true)}
-      <button class="btn btn-save-page" onclick="saveSingleImage(event)">📥 Нажми чтобы открыть фото</button>
-      ${blocksPanelHTML()}`;
+      <div class="seg">
+        <button class="${currentViewBlock === 'all' ? 'on' : ''}" onclick="setBlockView('all')">Вся витрина</button>
+        <button class="${currentViewBlock === 'model' ? 'on' : ''}" onclick="setBlockView('model')">По моделям</button>
+        <button class="${currentViewBlock === 'memory' ? 'on' : ''}" onclick="setBlockView('memory')">По памяти</button>
+      </div>
+    `;
+
+    const allItems = items.map((it, i) => ({ it, i }));
+
+    if (currentViewBlock === 'all') {
+      html += `
+        <div class="blk-card">
+          <div class="blk-actions">
+            <div class="blk-label">Общая витрина</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-photo" onclick="saveBlockImage('blk_all', this)">📥 Фото</button>
+              <button class="btn-txt" onclick="copyBlockText('all')">📱 Текст</button>
+            </div>
+          </div>
+          ${posterHTML(allItems, 'blk_all', true)}
+        </div>`;
+    } else if (currentViewBlock === 'model') {
+      const models = [...new Set(allItems.map(x => x.it.model))];
+      models.forEach(m => {
+        const filtered = allItems.filter(x => x.it.model === m);
+        const id = `blk_model_${m.replace(/\s+/g,'_')}`;
+        html += `
+        <div class="blk-card">
+          <div class="blk-actions">
+            <div class="blk-label">${esc(m.toUpperCase())}</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-photo" onclick="saveBlockImage('${id}', this)">📥 Фото</button>
+              <button class="btn-txt" onclick="copyBlockText('model', '${esc(m)}')">📱 Текст</button>
+            </div>
+          </div>
+          ${posterHTML(filtered, id, true)}
+        </div>`;
+      });
+    } else if (currentViewBlock === 'memory') {
+      const mems = [...new Set(allItems.map(x => x.it.model + ' ' + x.it.storage))];
+      mems.forEach(m => {
+        const filtered = allItems.filter(x => x.it.model + ' ' + x.it.storage === m);
+        const id = `blk_mem_${m.replace(/\s+/g,'_')}`;
+        html += `
+        <div class="blk-card">
+          <div class="blk-actions">
+            <div class="blk-label">${esc(m.toUpperCase())}</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-photo" onclick="saveBlockImage('${id}', this)">📥 Фото</button>
+              <button class="btn-txt" onclick="copyBlockText('memory', '${esc(m)}')">📱 Текст</button>
+            </div>
+          </div>
+          ${posterHTML(filtered, id, true)}
+        </div>`;
+      });
+    }
+    out.innerHTML = html;
   }
 
   const out = document.getElementById('postersOutput');
@@ -415,6 +429,7 @@
       items[el.dataset.i].custom = digits === '' ? null : Number(digits);
       updateStats();
     } else if (el.dataset.k) {
+      // Синхронизируем футер, если меняем текст
       ad[el.dataset.k] = el.textContent;
     }
   });
@@ -442,11 +457,6 @@
     if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); }
   });
 
-  window.resetPrices = function () {
-    items.forEach(it => it.custom = null);
-    renderPosters();
-  };
-
   function shot(el, done, btn) {
     const old = btn ? btn.innerHTML : '';
     if (btn) btn.innerHTML = '⏳';
@@ -465,39 +475,24 @@
     });
   }
 
-  window.saveSingleImage = function (e) {
+  window.saveBlockImage = function (id, btn) {
     if (document.activeElement) document.activeElement.blur();
-    const el = document.getElementById('poster_page_1');
-    if (el) shot(el, null, e.currentTarget);
+    const el = document.getElementById(id);
+    if (el) shot(el, null, btn);
   };
 
-  window.saveBlock = function (k, e) {
-    const b = blocks[k];
-    if (!b) return;
-    const list = items.map((it, i) => ({ it, i })).filter(({ it }) =>
-      it.sim === b.sim && (b.model == null || it.model === b.model) && (b.storage == null || it.storage === b.storage));
-    if (!list.length) return;
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:390px;';
-    wrap.innerHTML = posterHTML(list, 'blk_tmp', false);
-    document.body.appendChild(wrap);
-    shot(wrap.firstElementChild, () => wrap.remove(), e.currentTarget);
-  };
-
-  window.clearAll = function () {
-    document.getElementById('textInput').value = '';
-    ['markupBox', 'statsBox'].forEach(id => document.getElementById(id).style.display = 'none');
-    document.getElementById('postersOutput').innerHTML = '<div style="text-align:center;padding:30px;color:#64748b;">Вставьте текст и нажмите "Рассчитать"</div>';
-    items = [];
-    ad = { ...defaultAd };
-  };
-
-  window.copyText = function () {
+  window.copyBlockText = function (type, filterVal) {
     if (items.length === 0) return alert('Сначала нажмите "Рассчитать"');
+    
+    let listToCopy = items.map((it, i) => ({ it, i }));
+    if (type === 'model') listToCopy = listToCopy.filter(x => x.it.model === filterVal);
+    else if (type === 'memory') listToCopy = listToCopy.filter(x => x.it.model + ' ' + x.it.storage === filterVal);
+
     const models = uniqueModels();
     let text = "📱 *ПРАЙС НА iPhone — FREE ZONE*\n";
     let lastSim = null, lastModel = null, lastStorage = null;
-    items.forEach(it => {
+
+    listToCopy.forEach(({it}) => {
       if (it.sim !== lastSim) {
         text += `\n . . . . . .   📲*iPhone • ${it.sim}*📱\n`;
         lastSim = it.sim; lastModel = null; lastStorage = null;
@@ -516,6 +511,7 @@
       text += `   ${dot}*${fmt(finalPrice(it))} ₽*${q}\n`;
     });
     text += `\n${ad.t1}\n${ad.s1}\n${ad.t2}\n${ad.s2}\n📞 ${ad.phone}`;
+    
     navigator.clipboard.writeText(text).then(() => alert("Текст скопирован! Вставьте его в WhatsApp.")).catch(()=> alert('Ошибка копирования. Выделите текст вручную.'));
   };
 
@@ -588,7 +584,8 @@
       const name = `${r.model.toUpperCase()} ${r.raw || ''} ${r.color.toUpperCase()} ${tag}`.replace(/\s+/g, ' ').trim();
       return { name, buyPrice: p, qty: qty, custom: null, ...parseName(name) };
     }));
-    showBoxes();
+    document.getElementById('markupBox').style.display = 'flex';
+    document.getElementById('statsBox').style.display = 'flex';
     setView('show');
     renderPosters();
     window.scrollTo(0, 0);
@@ -601,8 +598,12 @@
     cmpRows = [];
   };
 
-  window.onload = function () {
+  window.clearAll = function () {
+    document.getElementById('textInput').value = '';
+    ['markupBox', 'statsBox'].forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('postersOutput').innerHTML = '<div style="text-align:center;padding:30px;color:#64748b;">Вставьте текст и нажмите "Рассчитать"</div>';
+    items = [];
+    ad = { ...defaultAd };
   };
 </script>
 </body>
