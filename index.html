@@ -147,6 +147,7 @@
 
   const SIM_ORDER = ['SIM + eSIM', 'SIM', 'eSIM'];
   const MODEL_EMOJI = ['🟩', '🟦', '🟪', '🟧', '🟨'];
+  const SIM_EMOJI = { 'SIM + eSIM': '💳', 'SIM': '📶', 'eSIM': '📲' };
 
   const THEMES = [
     { name:'Неон', base:'#050508', pbg:'radial-gradient(circle at top,#1a0e12 0%,#050508 60%)', txt:'#ffffff', muted:'#aaaaaa', brand:'#ffffff', sub:'#ef4444',
@@ -429,7 +430,6 @@
       items[el.dataset.i].custom = digits === '' ? null : Number(digits);
       updateStats();
     } else if (el.dataset.k) {
-      // Синхронизируем футер, если меняем текст
       ad[el.dataset.k] = el.textContent;
     }
   });
@@ -488,27 +488,27 @@
     if (type === 'model') listToCopy = listToCopy.filter(x => x.it.model === filterVal);
     else if (type === 'memory') listToCopy = listToCopy.filter(x => x.it.model + ' ' + x.it.storage === filterVal);
 
-    const models = uniqueModels();
+    // НОВЫЙ ФОРМАТ БЕЗ ТОЧЕК
     let text = "📱 *ПРАЙС НА iPhone — FREE ZONE*\n";
     let lastSim = null, lastModel = null, lastStorage = null;
 
     listToCopy.forEach(({it}) => {
       if (it.sim !== lastSim) {
-        text += `\n . . . . . .   📲*iPhone • ${it.sim}*📱\n`;
+        text += `\n📲 *iPhone • ${it.sim}* 📱\n`;
         lastSim = it.sim; lastModel = null; lastStorage = null;
       }
       if (it.model !== lastModel) {
-        const em = MODEL_EMOJI[models.indexOf(it.model) % MODEL_EMOJI.length];
-        text += `\n . . . . . . . .   ${em} *${it.model.toUpperCase()}* ${em}\n`;
+        const em = MODEL_EMOJI[uniqueModels().indexOf(it.model) % MODEL_EMOJI.length];
+        text += `\n${em} *${it.model.toUpperCase()}* ${em}\n`;
         lastModel = it.model; lastStorage = null;
       }
       if (it.storage !== lastStorage) {
-        text += `▪️ ${it.model}${it.storage ? ' · ' + it.storage : ''}\n`;
+        text += `📲 *${it.model} • ${it.storage}* 📱\n`;
         lastStorage = it.storage;
       }
       const q = it.qty > 1 ? ` (${it.qty} шт)` : '';
-      const dot = it.color ? colorDot(it.color) + ' ' + it.color + ' — ' : '';
-      text += `   ${dot}*${fmt(finalPrice(it))} ₽*${q}\n`;
+      const dot = it.color ? colorDot(it.color) : '▫️';
+      text += `${dot} ${it.color} — *${fmt(finalPrice(it))} ₽*${q}\n`;
     });
     text += `\n${ad.t1}\n${ad.s1}\n${ad.t2}\n${ad.s2}\n📞 ${ad.phone}`;
     
