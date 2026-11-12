@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор витрины</title>
 <style>
-  :root { --bg-main:#0f111a; --bg-card:#1a1d2d; --text-muted:#8b92a5; --green:#4ade80; --red:#ef4444; --blue:#3b82f6; --border:#2a2e42; }
+  :root { --bg-main:#0f111a; --bg-card:#1a1d2d; --text-muted:#8b92a5; --green:#4ade80; --blue:#3b82f6; --border:#2a2e42; }
   * { box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
   body { background:var(--bg-main); color:#fff; margin:0; padding:16px 16px 40px; }
   .container { max-width:600px; margin:0 auto; }
@@ -23,24 +23,32 @@
   .hint-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; font-size:12px; color:var(--text-muted); }
   .btn-reset { background:#334155; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
 
-  .preview-container { background:#000; border-radius:24px; padding:2px; border:1px solid #333; margin-bottom:10px; overflow:hidden; }
-  .poster { padding:30px 20px; text-align:center; border-radius:22px; background:radial-gradient(circle at top,#1a0e12 0%,#050508 60%); }
+  .themes { display:flex; gap:8px; overflow-x:auto; margin-bottom:12px; padding-bottom:4px; }
+  .theme-btn { background:var(--bg-card); color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12px; font-weight:700; white-space:nowrap; display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .theme-btn.on { border-color:#fff; }
+  .sw { width:18px; height:18px; border-radius:50%; border:1px solid rgba(255,255,255,.4); display:inline-block; }
+
+  .preview-container { border-radius:24px; border:1px solid rgba(128,128,128,.35); margin-bottom:10px; overflow:hidden; }
+  .poster { padding:30px 20px; text-align:center; }
   .poster-brand { font-size:24px; font-weight:900; margin-bottom:4px; letter-spacing:1px; }
-  .poster-subtitle { font-size:11px; font-weight:700; color:var(--red); text-transform:uppercase; margin-bottom:25px; letter-spacing:1px; }
+  .poster-subtitle { font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:25px; letter-spacing:1px; }
   .poster-list { display:flex; flex-direction:column; gap:10px; }
-  .poster-section { font-size:13px; font-weight:800; letter-spacing:.5px; text-align:center; margin-top:10px; padding:8px 12px; border-radius:999px; border:1px solid; }
+  .poster-section { font-size:14px; font-weight:800; letter-spacing:.5px; text-align:center; margin-top:14px; padding:9px 12px; border-radius:999px; border:1px solid; }
   .poster-section:first-child { margin-top:0; }
+  .model-head { display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .model-head .ln { flex:1; height:1px; }
+  .model-head .lb { font-size:13px; font-weight:800; letter-spacing:1px; }
   .poster-item { border-radius:14px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; text-align:left; gap:10px; border:1px solid; }
   .p-name { font-size:14px; font-weight:700; line-height:1.3; flex:1; }
-  .p-qty { font-size:11px; background:#334155; padding:2px 6px; border-radius:4px; margin-left:4px; }
+  .p-qty { font-size:11px; background:#334155; color:#fff; padding:2px 6px; border-radius:4px; margin-left:4px; }
   .p-price { font-size:18px; font-weight:800; white-space:nowrap; }
-  .poster-footer { margin-top:25px; border-radius:12px; padding:15px; display:flex; flex-direction:column; gap:8px; text-align:center; border:1px solid #3f2e14; background:rgba(63,46,20,.2); }
-  .footer-title { font-size:14px; font-weight:800; color:#f5c76a; } .footer-sub { font-size:12px; color:#aaa; }
-  .footer-label { font-size:12px; color:#aaa; margin-top:15px; }
-  .footer-phone { margin-top:10px; padding-top:12px; border-top:1px dashed #5a4020; font-size:18px; font-weight:800; letter-spacing:1px; color:var(--green); }
+  .poster-footer { margin-top:25px; border-radius:12px; padding:15px; display:flex; flex-direction:column; gap:8px; text-align:center; border:1px solid; }
+  .footer-title { font-size:14px; font-weight:800; } .footer-sub { font-size:12px; }
+  .footer-label { font-size:12px; margin-top:15px; }
+  .footer-phone { margin-top:10px; padding-top:12px; border-top:1px dashed; font-size:18px; font-weight:800; letter-spacing:1px; }
 
   [contenteditable] { -webkit-user-select:text; user-select:text; outline:none; min-width:30px; border-radius:6px; }
-  [contenteditable]:focus { outline:1px dashed #fff; outline-offset:3px; background:rgba(255,255,255,.08); }
+  [contenteditable]:focus { outline:1px dashed #888; outline-offset:3px; background:rgba(128,128,128,.15); }
   .custom-price { text-decoration:underline dotted; text-underline-offset:4px; }
 
   .btn-save-page { background:#e11d48; color:#fff; width:100%; padding:12px; font-size:15px; margin-bottom:15px; border-radius:8px; }
@@ -87,23 +95,44 @@
 
   // Порядок категорий: сначала SIM + eSIM, потом eSIM
   const SIM_ORDER = ['SIM + eSIM', 'SIM', 'eSIM'];
+  // Квадраты для моделей в тексте WhatsApp
+  const MODEL_EMOJI = ['🟩', '🟦', '🟪', '🟧', '🟨'];
 
-  // Цвета категорий на витрине (можно поменять коды цветов)
-  const SIM_COLORS = {
-    'SIM + eSIM': { c: '#60a5fa', bg: 'rgba(59,130,246,.10)',  br: 'rgba(96,165,250,.40)' },   // синий
-    'SIM':        { c: '#fb923c', bg: 'rgba(249,115,22,.10)',  br: 'rgba(251,146,60,.40)' },   // оранжевый
-    'eSIM':       { c: '#4ade80', bg: 'rgba(34,197,94,.09)',   br: 'rgba(74,222,128,.35)' }    // зелёный
-  };
+  // ===== ТЕМЫ (5 вариантов). pal = цвета моделей, sims = цвета заголовков SIM-блоков [SIM+eSIM, SIM, eSIM]
+  const THEMES = [
+    { name:'Неон', base:'#050508', pbg:'radial-gradient(circle at top,#1a0e12 0%,#050508 60%)', txt:'#ffffff', muted:'#aaaaaa', brand:'#ffffff', sub:'#ef4444',
+      footBg:'rgba(63,46,20,.25)', footBr:'#3f2e14', ft:'#f5c76a', phone:'#4ade80',
+      pal:['#4ade80','#60a5fa','#f472b6','#fbbf24','#a78bfa'], sims:['#60a5fa','#fb923c','#4ade80'] },
+    { name:'Золото', base:'#000000', pbg:'linear-gradient(160deg,#1a1408,#000000)', txt:'#fff4d6', muted:'#bfa76a', brand:'#f5c76a', sub:'#d4a017',
+      footBg:'rgba(245,199,106,.08)', footBr:'rgba(245,199,106,.35)', ft:'#f5c76a', phone:'#f5c76a',
+      pal:['#f5c76a','#e8b4a0','#d9d9d9','#c9a227','#f0e0a0'], sims:['#f5c76a','#e8b4a0','#d9d9d9'] },
+    { name:'Океан', base:'#020b18', pbg:'linear-gradient(160deg,#06213f,#020b18)', txt:'#ffffff', muted:'#9cc4e8', brand:'#7dd3fc', sub:'#38bdf8',
+      footBg:'rgba(56,189,248,.10)', footBr:'rgba(56,189,248,.35)', ft:'#7dd3fc', phone:'#5eead4',
+      pal:['#38bdf8','#5eead4','#a5b4fc','#fbbf24','#93c5fd'], sims:['#7dd3fc','#fbbf24','#5eead4'] },
+    { name:'Светлая', base:'#f4f5f9', pbg:'#f4f5f9', txt:'#111827', muted:'#6b7280', brand:'#111827', sub:'#e11d48',
+      footBg:'rgba(17,24,39,.05)', footBr:'rgba(17,24,39,.2)', ft:'#111827', phone:'#16a34a',
+      pal:['#16a34a','#2563eb','#db2777','#d97706','#7c3aed'], sims:['#2563eb','#ea580c','#16a34a'] },
+    { name:'Закат', base:'#12061f', pbg:'linear-gradient(160deg,#2a0f3d,#12061f 55%,#3d0f1f)', txt:'#ffffff', muted:'#d1b3e6', brand:'#ffd1f0', sub:'#fb7185',
+      footBg:'rgba(251,113,133,.10)', footBr:'rgba(251,113,133,.35)', ft:'#fda4af', phone:'#fde68a',
+      pal:['#fb7185','#fbbf24','#c084fc','#f9a8d4','#fdba74'], sims:['#c084fc','#fbbf24','#fb7185'] }
+  ];
+  let themeIdx = 0;
+  try { themeIdx = Number(localStorage.getItem('fzTheme')) || 0; } catch (e) {}
+  if (themeIdx < 0 || themeIdx >= THEMES.length) themeIdx = 0;
 
   const fmt = n => n.toLocaleString('ru-RU');
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const title = s => s.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase());
   const finalPrice = it => (it.custom != null ? it.custom : it.buyPrice + currentMarkup);
+  const rgba = (hex, a) => {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  };
 
   function colorDot(color) {
     const c = color.toUpperCase();
     const map = [
-      [/BLACK|ЧЕРН|ЧЁРН|SPACE|GRAY|GREY|GRAPHITE/, '⚫'],
+      [/BLACK|NIGHT|ЧЕРН|ЧЁРН|SPACE|GRAY|GREY|GRAPHITE/, '⚫'],
       [/SILVER|WHITE|СЕРЕБР|БЕЛ|STARLIGHT/, '⚪'],
       [/BLUE|СИН|ГОЛУБ|GLACIER|SKY/, '🔵'],
       [/ORANGE|ОРАНЖ/, '🟠'],
@@ -119,13 +148,14 @@
   }
 
   function parseName(name) {
-    const r = { model: name, storage: '', color: '', sim: 'eSIM' };
+    const r = { model: name, storage: '', gb: 0, color: '', sim: 'eSIM' };
     const m = name.match(/^(.*?)\s+(128|256|512|1\s?TB|2\s?TB)\b\s*(.*)$/);
     let rest = name;
     if (m) {
       r.model = m[1];
       const s = m[2].replace(/\s/g, '');
       r.storage = s === '1TB' ? '1 ТБ' : s === '2TB' ? '2 ТБ' : s + ' ГБ';
+      r.gb = s === '1TB' ? 1024 : s === '2TB' ? 2048 : Number(s);
       rest = m[3];
     }
     if (/SIM\s*\+\s*ESIM|2\s?SIM/.test(rest)) r.sim = 'SIM + eSIM';
@@ -133,6 +163,15 @@
     r.color = title(rest.replace(/1?\s?SIM\s*\+\s*ESIM|2\s?SIM|ESIM|SIM/g, '').trim());
     r.model = title(r.model);
     return r;
+  }
+
+  // Порядок моделей: обычная → Pro → Pro Max → остальные (Duo и т.д.)
+  function modelRank(m) {
+    const l = m.toLowerCase();
+    if (/max/.test(l)) return 2;
+    if (/pro/.test(l)) return 1;
+    if (/^\d+\s*(plus)?$/.test(l)) return 0;
+    return 3;
   }
 
   function processText() {
@@ -166,10 +205,16 @@
     if (items.length === 0) return alert('Не найдено ни одной цены.');
     if (depositFound) ad.s2 = depositFound;
 
-    // Сортировка по категории SIM (внутри категории порядок как в списке)
+    // Сортировка: SIM-категория → поколение (новые выше) → Pro/Pro Max/... → память → порядок в списке
     items = items
       .map((it, idx) => ({ it, idx }))
-      .sort((a, b) => (SIM_ORDER.indexOf(a.it.sim) - SIM_ORDER.indexOf(b.it.sim)) || (a.idx - b.idx))
+      .sort((a, b) =>
+        (SIM_ORDER.indexOf(a.it.sim) - SIM_ORDER.indexOf(b.it.sim)) ||
+        ((parseInt(b.it.model) || 0) - (parseInt(a.it.model) || 0)) ||
+        (modelRank(a.it.model) - modelRank(b.it.model)) ||
+        a.it.model.localeCompare(b.it.model) ||
+        (a.it.gb - b.it.gb) ||
+        (a.idx - b.idx))
       .map(x => x.it);
 
     document.getElementById('markupBox').style.display = 'flex';
@@ -182,6 +227,12 @@
     renderPosters();
   };
 
+  window.setTheme = function (k) {
+    themeIdx = k;
+    try { localStorage.setItem('fzTheme', k); } catch (e) {}
+    renderPosters();
+  };
+
   function updateStats() {
     let sum = 0, cnt = 0;
     items.forEach(it => { sum += finalPrice(it) * it.qty; cnt += it.qty; });
@@ -189,37 +240,58 @@
     document.getElementById('statTotal').textContent = fmt(sum) + ' ₽';
   }
 
+  function uniqueModels() {
+    const list = [];
+    items.forEach(it => { if (!list.includes(it.model)) list.push(it.model); });
+    return list;
+  }
+
   function renderPosters() {
     const out = document.getElementById('postersOutput');
     if (items.length === 0) return;
     updateStats();
+
+    const t = THEMES[themeIdx];
+    const models = uniqueModels();
+    const mcol = m => t.pal[models.indexOf(m) % t.pal.length];
 
     let html = `
       <div class="hint-row">
         <span>✏️ Нажмите на цену или на текст внизу, чтобы изменить</span>
         <button class="btn-reset" onclick="resetPrices()">↺ Сбросить цены</button>
       </div>
-      <div class="preview-container" id="poster_page_1"><div class="poster">
-      <div class="poster-brand">FREE ZONE</div><div class="poster-subtitle">ЛУЧШИЕ ЦЕНЫ</div><div class="poster-list">`;
-    let lastSim = null;
+      <div class="themes">${THEMES.map((th, k) =>
+        `<button class="theme-btn${k === themeIdx ? ' on' : ''}" onclick="setTheme(${k})"><span class="sw" style="background:${th.pbg}"></span>${th.name}</button>`).join('')}</div>
+      <div class="preview-container" id="poster_page_1" style="background:${t.base};">
+      <div class="poster" style="background:${t.pbg};color:${t.txt};">
+      <div class="poster-brand" style="color:${t.brand};">FREE ZONE</div>
+      <div class="poster-subtitle" style="color:${t.sub};">ЛУЧШИЕ ЦЕНЫ</div><div class="poster-list">`;
+
+    let lastSim = null, lastModel = null;
     items.forEach((it, i) => {
-      const col = SIM_COLORS[it.sim] || SIM_COLORS['eSIM'];
       if (it.sim !== lastSim) {
-        html += `<div class="poster-section" style="color:${col.c};background:${col.bg};border-color:${col.br};">📲 iPhone • ${esc(it.sim)} 📱</div>`;
-        lastSim = it.sim;
+        const sc = t.sims[Math.max(0, SIM_ORDER.indexOf(it.sim))];
+        html += `<div class="poster-section" style="color:${sc};background:${rgba(sc, .12)};border-color:${rgba(sc, .5)};">📲 iPhone • ${esc(it.sim)} 📱</div>`;
+        lastSim = it.sim; lastModel = null;
+      }
+      const c = mcol(it.model);
+      if (it.model !== lastModel) {
+        html += `<div class="model-head"><div class="ln" style="background:${rgba(c, .5)};"></div><div class="lb" style="color:${c};">${esc(it.model.toUpperCase())}</div><div class="ln" style="background:${rgba(c, .5)};"></div></div>`;
+        lastModel = it.model;
       }
       const q = it.qty > 1 ? `<span class="p-qty">${it.qty} шт</span>` : '';
-      html += `<div class="poster-item" style="background:${col.bg};border-color:${col.br};">
-        <div class="p-name">${esc(it.name)} ${q}</div>
-        <div class="p-price" style="color:${col.c};"><span contenteditable="true" inputmode="numeric" data-i="${i}" class="price-edit${it.custom != null ? ' custom-price' : ''}">${fmt(finalPrice(it))}</span> ₽</div></div>`;
+      html += `<div class="poster-item" style="background:${rgba(c, .10)};border-color:${rgba(c, .45)};">
+        <div class="p-name" style="color:${t.txt};">${esc(it.name)} ${q}</div>
+        <div class="p-price" style="color:${c};"><span contenteditable="true" inputmode="numeric" data-i="${i}" class="price-edit${it.custom != null ? ' custom-price' : ''}">${fmt(finalPrice(it))}</span> ₽</div></div>`;
     });
-    html += `</div><div class="poster-footer">
-        <div class="footer-title" contenteditable="true" data-k="t1">${esc(ad.t1)}</div>
-        <div class="footer-sub" contenteditable="true" data-k="s1">${esc(ad.s1)}</div>
-        <div class="footer-title" style="margin-top:8px;" contenteditable="true" data-k="t2">${esc(ad.t2)}</div>
-        <div class="footer-sub" contenteditable="true" data-k="s2">${esc(ad.s2)}</div>
-        <div class="footer-label" contenteditable="true" data-k="s3">${esc(ad.s3)}</div>
-        <div class="footer-phone" contenteditable="true" data-k="phone">${esc(ad.phone)}</div>
+
+    html += `</div><div class="poster-footer" style="background:${t.footBg};border-color:${t.footBr};">
+        <div class="footer-title" style="color:${t.ft};" contenteditable="true" data-k="t1">${esc(ad.t1)}</div>
+        <div class="footer-sub" style="color:${t.muted};" contenteditable="true" data-k="s1">${esc(ad.s1)}</div>
+        <div class="footer-title" style="color:${t.ft};margin-top:8px;" contenteditable="true" data-k="t2">${esc(ad.t2)}</div>
+        <div class="footer-sub" style="color:${t.muted};" contenteditable="true" data-k="s2">${esc(ad.s2)}</div>
+        <div class="footer-label" style="color:${t.muted};" contenteditable="true" data-k="s3">${esc(ad.s3)}</div>
+        <div class="footer-phone" style="color:${t.phone};border-top-color:${t.footBr};" contenteditable="true" data-k="phone">${esc(ad.phone)}</div>
       </div></div></div>
       <button class="btn btn-save-page" onclick="saveSingleImage(event)">📥 Нажми чтобы открыть фото</button>`;
     out.innerHTML = html;
@@ -273,7 +345,7 @@
     if (!el) return;
     const btn = e.currentTarget, old = btn.innerHTML;
     btn.innerHTML = "⏳ Генерируем...";
-    html2canvas(el, { scale: 2, backgroundColor: '#0f111a', useCORS: true }).then(canvas => {
+    html2canvas(el, { scale: 2, backgroundColor: THEMES[themeIdx].base, useCORS: true }).then(canvas => {
       const win = window.open();
       win.document.write(`<body style="margin:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;">
         <p style="color:#fff;font-family:sans-serif;text-align:center;padding:10px;">Зажмите на картинку и выберите «Сохранить в Фото»</p>
@@ -290,27 +362,30 @@
     ad = { ...defaultAd };
   };
 
-  // Текст для WhatsApp: сначала SIM + eSIM, потом eSIM
+  // Текст для WhatsApp: SIM-категория → модель → память → цвета
   window.copyText = function () {
     if (items.length === 0) return alert('Сначала нажмите "Рассчитать"');
-    const sims = {};
-    items.forEach(it => {
-      const key = it.model + (it.storage ? ' · ' + it.storage : '');
-      ((sims[it.sim] = sims[it.sim] || {})[key] = sims[it.sim][key] || []).push(it);
-    });
+    const models = uniqueModels();
 
     let text = "📱 *ПРАЙС НА iPhone — FREE ZONE*\n";
-    SIM_ORDER.forEach(sim => {
-      if (!sims[sim]) return;
-      text += `\n . . . . . .   📲*iPhone • ${sim}*📱\n`;
-      Object.keys(sims[sim]).forEach(key => {
-        text += ` . . . . . . . .   📱${key}\n`;
-        sims[sim][key].forEach(it => {
-          const q = it.qty > 1 ? ` (${it.qty} шт)` : '';
-          const dot = it.color ? colorDot(it.color) + ' ' + it.color + ' — ' : '';
-          text += `   ${dot}*${fmt(finalPrice(it))} ₽*${q}\n`;
-        });
-      });
+    let lastSim = null, lastModel = null, lastStorage = null;
+    items.forEach(it => {
+      if (it.sim !== lastSim) {
+        text += `\n . . . . . .   📲*iPhone • ${it.sim}*📱\n`;
+        lastSim = it.sim; lastModel = null; lastStorage = null;
+      }
+      if (it.model !== lastModel) {
+        const em = MODEL_EMOJI[models.indexOf(it.model) % MODEL_EMOJI.length];
+        text += `\n . . . . . . . .   ${em} *${it.model.toUpperCase()}* ${em}\n`;
+        lastModel = it.model; lastStorage = null;
+      }
+      if (it.storage !== lastStorage) {
+        text += `▪️ ${it.model}${it.storage ? ' · ' + it.storage : ''}\n`;
+        lastStorage = it.storage;
+      }
+      const q = it.qty > 1 ? ` (${it.qty} шт)` : '';
+      const dot = it.color ? colorDot(it.color) + ' ' + it.color + ' — ' : '';
+      text += `   ${dot}*${fmt(finalPrice(it))} ₽*${q}\n`;
     });
     text += `\n${ad.t1}\n${ad.s1}\n${ad.t2}\n${ad.s2}\n📞 ${ad.phone}`;
 
