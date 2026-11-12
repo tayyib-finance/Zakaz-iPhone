@@ -1,9 +1,9 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Генератор витрины</title>
+<title>Генератор витрины и Сравнение цен</title>
 <style>
   :root { --bg-main:#0f111a; --bg-card:#1a1d2d; --text-muted:#8b92a5; --green:#4ade80; --blue:#3b82f6; --border:#2a2e42; }
   * { box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
@@ -86,7 +86,7 @@
 
   <div id="viewShow">
     <div class="input-box">
-      <textarea id="textInput" placeholder="Вставьте список сюда..."></textarea>
+      <textarea id="textInput" placeholder="Вставьте список сюда (Например: 18 Pro 256 Black eSIM - 105400)..."></textarea>
       <div class="btn-grid">
         <button class="btn btn-calc" onclick="processText()">Рассчитать</button>
         <button class="btn btn-clear" onclick="clearAll()">Очистить</button>
@@ -109,9 +109,9 @@
 
   <div id="viewCmp" style="display:none;">
     <div class="input-box">
-      <input class="name-input" id="nameA" value="Прайс 1">
+      <input class="name-input" id="nameA" value="Прайс 1 (Махачкала)">
       <textarea id="cmpA" placeholder="Вставьте первый прайс..."></textarea>
-      <input class="name-input" id="nameB" value="Прайс 2">
+      <input class="name-input" id="nameB" value="Прайс 2 (Предзаказ)">
       <textarea id="cmpB" placeholder="Вставьте второй прайс..."></textarea>
       <div class="btn-grid">
         <button class="btn btn-calc" onclick="runCompare()">Сравнить</button>
@@ -164,21 +164,35 @@
 
   const fmt = n => n.toLocaleString('ru-RU');
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const title = s => s.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase());
+  
+  const title = s => s.replace(/\biphone\b/gi, 'iPhone').replace(/(^|\s)(\S)/g, (m,a,b)=>a+b.toUpperCase()).replace(/\bIphone\b/g,'iPhone');
+  
   const finalPrice = it => (it.custom != null ? it.custom : it.buyPrice + currentMarkup);
   const rgba = (hex, a) => {
     const n = parseInt(hex.slice(1), 16);
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
   };
 
+  // Нормализация опечаток и кириллицы
+  function normalizeName(s) {
+    return s
+      .replace(/\bпро\b/gi, 'Pro')
+      .replace(/\bмакс\b/gi, 'Max')
+      .replace(/\bбургун\w*/gi, 'Burgundy')
+      .replace(/\bглас\w*/gi, 'Glacier')
+      .replace(/\bгласир\w*/gi, 'Glacier')
+      .replace(/\bблэк\b/gi, 'Black')
+      .replace(/\bсильвер\b/gi, 'Silver');
+  }
+
   function colorDot(color) {
     const c = color.toUpperCase();
     const map = [
-      [/BLACK|NIGHT|ЧЕРН|ЧЁРН|SPACE|GRAY|GREY|GRAPHITE/, '⚫'],
+      [/BLACK|NIGHT|ЧЕРН|ЧЁРН|SPACE|GRAY|GREY|GRAPHITE|НАЙТ/, '⚫'],
       [/SILVER|WHITE|СЕРЕБР|БЕЛ|STARLIGHT/, '⚪'],
-      [/BLUE|СИН|ГОЛУБ|GLACIER|SKY/, '🔵'],
+      [/BLUE|СИН|ГОЛУБ|GLACIER|SKY|ГЛЕЙС|ГЛЭЙС|ГЛАС/, '🔵'],
       [/ORANGE|ОРАНЖ/, '🟠'],
-      [/RED|BURGUNDY|БОРДО|КРАСН/, '🔴'],
+      [/RED|BURGUNDY|БОРД|БУРГ/, '🔴'],
       [/GREEN|ЗЕЛ/, '🟢'],
       [/GOLD|YELLOW|ЖЕЛТ|ЖЁЛТ|ЗОЛОТ/, '🟡'],
       [/PURPLE|VIOLET|LAVENDER|ФИОЛ|СИРЕН/, '🟣'],
@@ -191,19 +205,20 @@
 
   function parseName(name) {
     const r = { model: name, storage: '', raw: '', gb: 0, color: '', sim: 'eSIM' };
-    const m = name.match(/^(.*?)\s+(128|256|512|1\s?TB|2\s?TB)\b\s*(.*)$/);
+    // Поддержка 1 TB / 1ТБ / 1 ТБ и т.д.
+    const m = name.match(/^(.*?)\s+(128|256|512|1\s?[TТ][BБ]|2\s?[TТ][BБ])\b\s*(.*)$/i);
     let rest = name;
     if (m) {
       r.model = m[1];
-      const s = m[2].replace(/\s/g, '');
-      r.raw = s;
-      r.storage = s === '1TB' ? '1 ТБ' : s === '2TB' ? '2 ТБ' : s + ' ГБ';
-      r.gb = s === '1TB' ? 1024 : s === '2TB' ? 2048 : Number(s);
+      const s = m[2].replace(/\s/g, '').toUpperCase();
+      r.raw = s === '1TB' || s === '1ТБ' ? '1TB' : s === '2TB' || s === '2ТБ' ? '2TB' : s.replace(/[ТТ]Б/, '') + 'GB';
+      r.storage = r.raw === '1TB' ? '1 ТБ' : r.raw === '2TB' ? '2 ТБ' : r.raw.replace('GB', '') + ' ГБ';
+      r.gb = r.raw === '1TB' ? 1024 : r.raw === '2TB' ? 2048 : Number(r.raw.replace('GB',''));
       rest = m[3];
     }
-    if (/SIM\s*\+\s*ESIM|2\s?SIM/.test(rest)) r.sim = 'SIM + eSIM';
-    else if (!/ESIM/.test(rest)) r.sim = /SIM/.test(rest) ? 'SIM' : 'eSIM';
-    r.color = title(rest.replace(/1?\s?SIM\s*\+\s*ESIM|2\s?SIM|ESIM|SIM/g, '').trim());
+    if (/SIM\s*\+\s*ESIM|2\s?SIM/i.test(rest)) r.sim = 'SIM + eSIM';
+    else if (!/ESIM/i.test(rest)) r.sim = /SIM/i.test(rest) ? 'SIM' : 'eSIM';
+    r.color = title(rest.replace(/1?\s?SIM\s*\+\s*ESIM|2\s?SIM|ESIM|SIM/gi, '').trim());
     r.model = title(r.model);
     return r;
   }
@@ -236,6 +251,10 @@
       const cleanLine = line.trim();
       if (!cleanLine) return;
       const low = cleanLine.toLowerCase();
+      
+      // Игнорируем AED, доллары, предзаказы
+      if (/\b(aed|coming|\$|€)\b/i.test(cleanLine)) return;
+      
       if (low.includes('бронь') || low.includes('аванс') || low.includes('оплата при получении')) { deposit = cleanLine; return; }
       if (low.includes('выдача') || low.includes('пред заказ') || low.includes('предзаказ')) return;
 
@@ -250,7 +269,10 @@
         let namePart = cleanLine.substring(0, last.index).replace(/[-—@]/g, ' ').trim();
         namePart = namePart.replace(/iPhone/gi, '').replace(/[()]/g, '').trim();
         namePart = namePart.toUpperCase().replace(/\s+/g, ' ');
-        if (namePart.length > 2 && price > 0) list.push({ name: namePart, buyPrice: price, qty, custom: null, ...parseName(namePart) });
+        if (namePart.length > 2 && price > 0) {
+          namePart = normalizeName(namePart);
+          list.push({ name: namePart, buyPrice: price, qty, custom: null, ...parseName(namePart) });
+        }
       }
     });
     return { list, deposit };
@@ -494,7 +516,7 @@
       text += `   ${dot}*${fmt(finalPrice(it))} ₽*${q}\n`;
     });
     text += `\n${ad.t1}\n${ad.s1}\n${ad.t2}\n${ad.s2}\n📞 ${ad.phone}`;
-    navigator.clipboard.writeText(text).then(() => alert("Текст скопирован! Вставьте его в WhatsApp."));
+    navigator.clipboard.writeText(text).then(() => alert("Текст скопирован! Вставьте его в WhatsApp.")).catch(()=> alert('Ошибка копирования. Выделите текст вручную.'));
   };
 
   const cmpKey = it => [it.sim, it.model.toUpperCase(), it.gb, it.color.toUpperCase()].join('|');
@@ -507,8 +529,9 @@
     const add = (list, side) => list.forEach(it => {
       const k = cmpKey(it);
       let r = map.get(k);
-      if (!r) { r = { ...it, a: null, b: null }; map.set(k, r); }
+      if (!r) { r = { ...it, a: null, b: null, aQty: 0, bQty: 0 }; map.set(k, r); }
       if (r[side] == null || it.buyPrice < r[side]) r[side] = it.buyPrice;
+      r[side + 'Qty'] = it.qty;
     });
     add(A, 'a'); add(B, 'b');
     cmpRows = sortList([...map.values()]);
@@ -535,6 +558,10 @@
       else eq++;
     });
 
+    if (ca === 0 && cb === 0 && one === 0 && eq > 0) {
+      alert('Прайсы идентичны — сравнивать нечего (все цены совпадают).');
+    }
+
     let h = `<div class="cmp-sum">
       <div class="cmp-chip">Дешевле: ${nA}<b>${ca}</b></div>
       <div class="cmp-chip">Дешевле: ${nB}<b>${cb}</b></div>
@@ -556,9 +583,10 @@
     if (!cmpRows.length) return;
     items = sortList(cmpRows.map(r => {
       const p = Math.min(...[r.a, r.b].filter(x => x != null));
+      const qty = Math.max(r.aQty || 1, r.bQty || 1);
       const tag = r.sim === 'SIM + eSIM' ? '1SIM+ESIM' : r.sim === 'SIM' ? 'SIM' : 'ESIM';
-      const name = `${r.model.toUpperCase()} ${r.raw} ${r.color.toUpperCase()} ${tag}`.replace(/\s+/g, ' ').trim();
-      return { name, buyPrice: p, qty: 1, custom: null, ...parseName(name) };
+      const name = `${r.model.toUpperCase()} ${r.raw || ''} ${r.color.toUpperCase()} ${tag}`.replace(/\s+/g, ' ').trim();
+      return { name, buyPrice: p, qty: qty, custom: null, ...parseName(name) };
     }));
     showBoxes();
     setView('show');
