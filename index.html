@@ -81,10 +81,10 @@
   .cmp-cell.none { color:#475569; }
   .price-note { font-size:12px; color:var(--text-muted); margin-bottom:10px; line-height:1.4; }
   
-  .rate-box { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .rate-box { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .rate-box label { font-size:14px; font-weight:700; color:#f5c76a; white-space:nowrap; }
   .rate-box input { width:110px; background:#0f111a; border:1px solid #475569; color:var(--green); padding:10px; border-radius:8px; font-size:16px; font-weight:700; text-align:center; outline:none; }
-  .rate-info { font-size:12px; color:var(--text-muted); }
+  .rate-info { font-size:12px; color:var(--text-muted); width:100%; }
 </style>
 </head>
 <body>
@@ -97,7 +97,7 @@
 
   <div id="viewShow">
     <div class="input-box">
-      <textarea id="textInput" placeholder="Вставьте список сюда (плоский или иерархический формат)..."></textarea>
+      <textarea id="textInput" placeholder="Вставьте список сюда..."></textarea>
       <div class="btn-grid">
         <button class="btn btn-calc" onclick="processText()">Рассчитать</button>
         <button class="btn btn-clear" onclick="clearAll()">Очистить</button>
@@ -122,14 +122,13 @@
   <div id="viewCmp" style="display:none;">
     <div class="input-box">
       
-      <!-- ПОЛЕ КУРСА ДОЛЛАРА -->
       <div class="rate-box">
         <label>Курс USD (₽):</label>
         <input type="number" id="usdRate" value="86.2" step="0.1" min="1" oninput="onRateChange()">
-        <div class="rate-info">AED ÷ 3.68 × этот курс</div>
+        <div class="rate-info">Дирхамы → рубли: AED ÷ 3.68 × этот курс. Можно менять в любой момент.</div>
       </div>
 
-      <div class="price-note">Дирхамы (Дубай) автоматически переводятся по курсу выше. Можно менять в любой момент.</div>
+      <div class="price-note">Необязательно заполнять все 4 колонки. Пустые просто игнорируются.</div>
       
       <input class="name-input" id="nameA" value="Прайс 1">
       <textarea id="cmpA" placeholder="Прайс 1..."></textarea>
@@ -158,8 +157,8 @@
   let cmpRows = [];
   let currentMarkup = 3000;
   let currentViewBlock = 'all';
-  let usdRate = 86.2;           // текущий курс доллара
-  const AED_USD = 3.68;         // фиксированный курс дирхама к доллару
+  let usdRate = 86.2;
+  const AED_USD = 3.68;
 
   const defaultAd = {
     t1: '💳 Доступна рассрочка',
@@ -200,7 +199,6 @@
   const finalPrice = it => (it.custom != null ? it.custom : it.buyPrice + currentMarkup);
   const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
 
-  // Пересчёт дирхамов → рубли с учётом текущего курса
   function aedToRub(aed) {
     return Math.round(aed / AED_USD * usdRate);
   }
@@ -209,7 +207,6 @@
     const val = Number(document.getElementById('usdRate').value);
     if (val > 0) {
       usdRate = val;
-      // если уже есть результат сравнения — пересчитываем
       if (cmpRows.length > 0) runCompare();
     }
   }
@@ -274,11 +271,13 @@
       (a.idx - b.idx)).map(x => x.it);
   }
 
-  // ========== УЛУЧШЕННЫЙ ПАРСЕР ==========
+  // ========== НАДЁЖНЫЙ ПАРСЕР ==========
   function parseList(text) {
     const list = [];
     let deposit = '';
     let cur = { model: '', storage: '', raw: '', gb: 0, sim: 'eSIM', color: '' };
+
+    const skipRe = /гарант|наличи|контакт|рабоч|обращать|телефон|whatsapp|вацап|бронь|аванс|оплата при|выдача|пред.?заказ|non active|coming|\$|€/i;
 
     const lines = text.split(/\r?\n/);
 
@@ -286,28 +285,28 @@
       let line = rawLine.trim();
       if (!line) continue;
 
-      const low = line.toLowerCase();
-      if (/\b(aed|coming|\$|€)\b/i.test(line) && !/\d{3,}/.test(line)) continue;
-      if (low.includes('бронь') || low.includes('аванс') || low.includes('оплата при получении')) {
-        deposit = line; continue;
-      }
-      if (low.includes('выдача') || low.includes('пред заказ') || low.includes('предзаказ') || low.includes('non active')) continue;
+      // Полностью пропускаем рекламные/контактные строки
+      if (skipRe.test(line)) continue;
 
-      // --- 1. Полная строка с ценой в конце ---
-      const priceMatches = [...line.matchAll(/\b(\d{3,7})\b/g)];
+      // --- 1. Строка с ценой ---
+      const priceMatches = [...line.matchAll(/\b(\d{4,7})\b/g)]; // минимум 4 цифры
       if (priceMatches.length > 0) {
         const last = priceMatches[priceMatches.length - 1];
         let price = Number(last[1]);
         let namePart = line.substring(0, last.index).replace(/[-—@]/g, ' ').trim();
 
-        const isColorLine = /^(?:[🔴⚫⚪🔵🟢🟡🟣🩷🟠🟤▫️]\s*)?[A-Za-zА-Яа-яЁё\s]{2,20}$/.test(namePart.replace(/\s+/g,' ').trim()) 
-                         || /^(?:[🔴⚫⚪🔵🟢🟡🟣🩷🟠🟤▫️]\s*)?(Burgundy|Black|Silver|Blue|Glacier|White|Night|Sky|Orange|Gold|Purple|Pink)/i.test(namePart);
+        // Слишком маленькая цена — скорее всего не цена
+        if (price < 3500) continue;
+
+        // Это цвет + цена под заголовком?
+        const isColorLine = /^(?:[🔴⚫⚪🔵🟢🟡🟣🩷🟠🟤▫️]\s*)?[A-Za-zА-Яа-яЁё\s\-]{2,25}$/.test(namePart.replace(/\s+/g,' ').trim()) 
+                         || /^(?:[🔴⚫⚪🔵🟢🟡🟣🩷🟠🟤▫️]\s*)?(Burgundy|Black|Silver|Blue|Glacier|White|Night|Sky|Orange|Gold|Purple|Pink|Титан|Desert)/i.test(namePart);
 
         if (isColorLine && cur.model) {
           let color = namePart.replace(/[🔴⚫⚪🔵🟢🟡🟣🩷🟠🟤▫️]/g, '').trim();
           color = title(color);
           if (price < 15000) price = aedToRub(price);
-          if (price > 0 && color) {
+          if (price > 0 && color.length > 1) {
             const fullName = `${cur.model} ${cur.raw || ''} ${color} ${cur.sim === 'SIM + eSIM' ? '1SIM+ESIM' : cur.sim}`.replace(/\s+/g,' ').trim();
             list.push({
               name: fullName.toUpperCase(),
@@ -320,9 +319,13 @@
           continue;
         }
 
-        namePart = namePart.replace(/iPhone/gi, '').replace(/[()]/g, '').trim();
+        // Обычная полная строка товара
+        // Должна содержать признаки модели
+        if (!/(pro|max|iphone|iph|\d{2}\s*(pro|max)?)/i.test(namePart) && !cur.model) continue;
+
+        namePart = namePart.replace(/iPhone|Iph|IPH/gi, '').replace(/[()]/g, '').trim();
         namePart = namePart.toUpperCase().replace(/\s+/g, ' ');
-        if (namePart.length > 2 && price > 0) {
+        if (namePart.length > 3 && price > 0) {
           if (price < 15000) price = aedToRub(price);
           namePart = normalizeName(namePart);
           list.push({ name: namePart, buyPrice: price, qty: 1, custom: null, ...parseName(namePart) });
@@ -330,9 +333,8 @@
         continue;
       }
 
-      // --- 2. Заголовок модели ---
-      const headerMatch = line.match(/(?:iPhone|Iph|IPH)?\s*(\d{1,2})\s*(Pro\s*Max|Pro|Max|Plus)?\s*(128|256|512|1\s?[TТ][BБ]|2\s?[TТ][BБ])?/i);
-      if (headerMatch || /SIM|eSIM|GB|TB|ТБ/i.test(line)) {
+      // --- 2. Заголовок модели (без цены) ---
+      if (/(?:iPhone|Iph|IPH)?\s*\d{1,2}\s*(Pro\s*Max|Pro|Max|Plus)?/i.test(line) || /GB|TB|ТБ|SIM|eSIM/i.test(line)) {
         let modelStr = line
           .replace(/iPhone|Iph|IPH/gi, '')
           .replace(/[()]/g, ' ')
@@ -340,7 +342,7 @@
           .trim();
 
         let sim = 'eSIM';
-        if (/1\s*SIM\s*\+\s*e?SIM|SIM\s*\+\s*e?SIM|2\s*SIM/i.test(line)) sim = 'SIM + eSIM';
+        if (/1\s*SIM\s*\+\s*e?SIM|SIM\s*\+\s*e?SIM|2\s*SIM|1Sim\+eSim/i.test(line)) sim = 'SIM + eSIM';
         else if (/\bSIM\b/i.test(line) && !/eSIM/i.test(line)) sim = 'SIM';
 
         const m = modelStr.match(/(\d{1,2})\s*(Pro\s*Max|Pro|Max|Plus)?\s*(128|256|512|1\s?[TТ][BБ]|2\s?[TТ][BБ])?/i);
@@ -614,7 +616,6 @@
   const cmpKey = it => [it.sim, it.model.toUpperCase(), it.gb, (it.color || '').toUpperCase()].join('|');
 
   window.runCompare = function () {
-    // обновляем курс на всякий случай
     const val = Number(document.getElementById('usdRate').value);
     if (val > 0) usdRate = val;
 
@@ -643,7 +644,10 @@
     });
 
     cmpRows = sortList([...map.values()]);
-    if (cmpRows.length === 0) return alert('Не найдено ни одной позиции для сравнения');
+    if (cmpRows.length === 0) {
+      alert('Не найдено ни одной позиции для сравнения.\nПроверьте, что в полях есть строки с ценами.');
+      return;
+    }
     renderCompare();
   };
 
@@ -658,18 +662,16 @@
 
   function renderCompare() {
     const names = ['A','B','C','D'].map(id => esc(document.getElementById('name' + id).value || 'Прайс ' + id));
-    let counts = { a:0, b:0, c:0, d:0, eq:0, one:0 };
+    let counts = { a:0, b:0, c:0, d:0 };
 
     cmpRows.forEach(r => {
       const vals = [r.a, r.b, r.c, r.d].filter(x => x != null);
-      if (vals.length <= 1) { one++; return; }
+      if (vals.length === 0) return;
       const min = Math.min(...vals);
-      let winners = 0;
-      if (r.a === min) { counts.a++; winners++; }
-      if (r.b === min) { counts.b++; winners++; }
-      if (r.c === min) { counts.c++; winners++; }
-      if (r.d === min) { counts.d++; winners++; }
-      if (winners > 1) counts.eq++;
+      if (r.a === min) counts.a++;
+      if (r.b === min) counts.b++;
+      if (r.c === min) counts.c++;
+      if (r.d === min) counts.d++;
     });
 
     let h = `<div class="cmp-sum">
