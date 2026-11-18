@@ -107,7 +107,7 @@ textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--br)
   <div id="viewCmp" style="display:none">
     <div class="input-box">
       <div class="note">Заполнять все 4 колонки не обязательно. Сверху — позиции с самой большой разницей в цене.</div>
-      <label class="chk"><input type="checkbox" id="ignSim"> Сравнивать без учёта типа SIM (eSIM и SIM + eSIM — в одной строке)</label>
+      <label class="chk"><input type="checkbox" id="ignSim"> Сравнивать без учёта типа SIM и региона (🇮🇩/🇦🇪/🇷🇺 — в одной строке)</label>
       <input class="name-input" id="nameA" value="Прайс 1 (Махачкала)"><textarea id="cmpA" placeholder="Прайс 1..."></textarea>
       <input class="name-input" id="nameB" value="Прайс 2"><textarea id="cmpB" placeholder="Прайс 2..."></textarea>
       <input class="name-input" id="nameC" value="Прайс 3 (Дубай)"><textarea id="cmpC" placeholder="Прайс 3..."></textarea>
@@ -153,8 +153,89 @@ const cap = w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 const SKIP = /гарант|наличи|контакт|рабоч|обращать|телефон|whatsapp|вацап|бронь|аванс|оплата|выдача|пред.?заказ|coming|\$|€|прайс|актуальн|доставк|рассрочк|курс|актив|active|\+?[78][\s(-]*\d{3}[\s)-]*\d{3}[\s-]*\d{2}|\b\d{1,2}\.\d{1,2}(\.\d{2,4})?\b/i;
 const COLORS = [[/^burg/i,'Burgundy'],[/^glac/i,'Glacier'],[/^silv/i,'Silver'],[/^blac/i,'Black'],[/^(черн|чёрн)/i,'Black'],[/^серебр/i,'Silver'],[/^(син|голуб)/i,'Blue'],[/^(глас|глей|глэй)/i,'Glacier'],[/^бург/i,'Burgundy'],[/^бел/i,'White'],[/^оранж/i,'Orange'],[/^зел/i,'Green'],[/^роз/i,'Pink'],[/^(фиол|сирен)/i,'Purple'],[/^золот/i,'Gold'],[/^сер/i,'Gray']];
 const canonColor = s => s.split(' ').filter(Boolean).map(w => { for (const [re, en] of COLORS) if (re.test(w)) return en; return cap(w); }).join(' ');
+// GrayGreen → Gray Green, Iceblue/Icyblue → Icy Blue, Grey → Gray, "Awesome" убираем
+const colorFix = s => canonColor(s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\bawesome\b/gi, ' ').replace(/\b(icy|ice)\s*blue\b/gi, 'Icy Blue').replace(/\bgrey\b/gi, 'Gray').replace(/\s+/g, ' ').trim());
 
-// Вынимает из строки модель, память, тип SIM; остаток (цвет) возвращает в rest
+const NOEMO = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\uFE0F\u200D\u20E3]/gu;
+const FLAG = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
+const CAT_LABEL = { iPhone: 'iPhone', Samsung: 'Samsung', Xiaomi: 'Xiaomi', Android: 'Android', MacBook: 'MacBook', AirPods: 'AirPods', Watch: 'Apple Watch' };
+const CAT_ICON = { iPhone: '📲', Samsung: '📱', Xiaomi: '📱', Android: '📱', MacBook: '💻', AirPods: '🎧', Watch: '⌚' };
+const SEC_ORDER = ['iPhone • SIM + eSIM', 'iPhone • SIM', 'iPhone • eSIM', 'Samsung', 'Xiaomi', 'Android', 'MacBook', 'AirPods', 'Apple Watch'];
+const secOf = it => it.cat === 'iPhone' ? 'iPhone • ' + it.sim : CAT_LABEL[it.cat];
+const secIdx = it => { const i = SEC_ORDER.indexOf(secOf(it)); return i < 0 ? 99 : i; };
+const romLbl = n => n >= 1024 ? n / 1024 + ' ТБ' : n + ' ГБ';
+const RAMROM = /\b(\d{1,2})\s*\/\s*(\d{2,4}|[12]\s*tb)\s*(?:gb|гб|tb|тб)?(?![a-z\d])/i;
+const SAMS = /^(?:z\s*(?:fold|flip)|galaxy|[asmf]\d{2})/i;
+
+// Определяем тип товара по строке (до разбора)
+function classify(s) {
+  s = s.replace(NOEMO, ' ').replace(/\s+/g, ' ').trim();
+  if (/airpods/i.test(s)) return 'AirPods';
+  if (/^(?:macbook\s*)?(?:air|pro)\s*1\d\b/i.test(s) || /\(\s*M\d/.test(s)) return 'MacBook';
+  if (/^(?:apple\s*watch\s*)?(?:(?:se\d?|s\d{1,2})\s+(?:3\d|4\d)(?![\d\/])|(?:ul|ultra)\s*\d)/i.test(s)) return 'Watch';
+  if (/^(?:poco|redmi|xiaomi)/i.test(s)) return 'Xiaomi';
+  if (SAMS.test(s)) return 'Samsung';
+  if (RAMROM.test(s)) return 'Android';
+  return 'iPhone';
+}
+
+function parseSamsung(s, cat) {
+  const RST = /(?<![а-яa-z])(?:рст|pct)(?![а-яa-z])/gi;
+  const rst = RST.test(s);
+  s = s.replace(NOEMO, ' ').replace(RST, ' ').replace(/\s+/g, ' ').trim();
+  let m = s.match(RAMROM), ram = 0, rom = 0;
+  if (m) { ram = +m[1]; rom = /tb/i.test(m[2]) ? parseInt(m[2]) * 1024 : +m[2]; }
+  else if ((m = s.match(/\b(128|256|512|[12]\s*(?:tb|тб))\s*(?:gb|гб)?(?![a-z\d])/i))) rom = /tb|тб/i.test(m[1]) ? parseInt(m[1]) * 1024 : +m[1];
+  else return null;
+  const head = s.slice(0, m.index).replace(/(\d)\s*fe\b/gi, '$1 FE').replace(/fold\s*(\d)/i, 'Fold $1').replace(/flip\s*(\d)/i, 'Flip $1');
+  const model = head.split(/\s+/).filter(Boolean).map(w => /^fe$/i.test(w) ? 'FE' : /\d/.test(w) ? w[0].toUpperCase() + w.slice(1) : cap(w)).join(' ');
+  if (!model) return null;
+  const color = colorFix(s.slice(m.index + m[0].length).replace(/[^\p{L}\s]/gu, ' '));
+  return { cat, model, gb: rom, memN: rom, mem: romLbl(rom), storage: ram ? ram + '/' + romLbl(rom) : romLbl(rom), color, extra: rst ? 'РСТ' : '' };
+}
+
+function parseMac(s) {
+  s = s.replace(NOEMO, ' ').replace(/macbook/i, ' ').replace(/\s+/g, ' ').trim();
+  const pm = s.match(/\(\s*(M\d(?:\s*(?:Pro|Max))?)\s+(\d{1,2})\s*\/\s*(\d+)\s*(tb|gb)?\s*\)/i);
+  const mm = s.match(/^(air|pro)\s*(1\d)\b/i);
+  if (!pm || !mm) return null;
+  const chip = pm[1].split(/\s+/).map((w, i) => i ? cap(w) : w.toUpperCase()).join(' ');
+  let rom = +pm[3]; if (/tb/i.test(pm[4] || '') || rom <= 4) rom *= 1024;
+  let rest = s.replace(pm[0], ' ').slice(mm[0].length);
+  const sk = rest.match(/\b(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])[A-Z0-9]{4,12}\b/);   // артикул MDHH4, Z1L30013A…
+  if (sk) rest = rest.replace(sk[0], ' ');
+  return { cat: 'MacBook', model: 'MacBook ' + cap(mm[1]) + ' ' + mm[2], gb: rom, memN: rom, mem: romLbl(rom), storage: chip + ' ' + pm[2] + '/' + (rom >= 1024 ? rom / 1024 + 'TB' : rom), color: colorFix(rest.replace(/[^\p{L}\s]/gu, ' ')), extra: sk ? sk[0] : '' };
+}
+
+function parsePods(s) {
+  s = s.replace(NOEMO, ' ').replace(/airpods/i, ' ');
+  const extra = [...s.matchAll(/\(([^)]*)\)/g)].map(x => x[1].trim()).filter(x => !/^(19|20)\d\d$/.test(x)).join(' ');
+  s = s.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+  const mm = s.match(/^(max\s*2|max|pro\s*\d?|\d+)(\s*anc)?/i);
+  if (!mm) return null;
+  const nm = (mm[1] + (mm[2] || '')).replace(/\s+/g, ' ').split(' ').map(w => /^anc$/i.test(w) ? 'ANC' : cap(w)).join(' ');
+  return { cat: 'AirPods', model: 'AirPods ' + nm, gb: 0, memN: 0, mem: '', storage: '', color: colorFix(s.slice(mm[0].length).replace(/[^\p{L}\s]/gu, ' ')), extra };
+}
+
+function parseWatch(s) {
+  s = s.replace(NOEMO, ' ').replace(/apple\s*watch/i, ' ').replace(/\s+/g, ' ').trim();
+  const mm = s.match(/^(se\s*\d?|s\s*\d{1,2}|ul\s*\d|ultra\s*\d)\s*/i);
+  if (!mm) return null;
+  const t = mm[1].replace(/\s+/g, '').toUpperCase(), ul = /^UL/.test(t);
+  const model = ul ? 'Watch Ultra ' + t.replace(/\D/g, '') : 'Watch ' + t;
+  let rest = s.slice(mm[0].length), size = 0;
+  if (!ul) { const sm = rest.match(/^(3\d|4\d)\b\s*/); if (sm) { size = +sm[1]; rest = rest.slice(sm[0].length); } }
+  const ym = rest.match(/\(?\b(20\d\d)\b\)?/); if (ym) rest = rest.replace(ym[0], ' ');
+  rest = rest.replace(/[\s\-–—]+$/, '');
+  let sz = '';
+  const bm = rest.match(/\(\s*([SML](?:\s*\/\s*[SML])?)\s*\)/i);
+  if (bm) { sz = bm[1]; rest = rest.replace(bm[0], ' '); }
+  else { const em = rest.match(/\s(S\/M|M\/L|S|M|L)\s*$/); if (em) { sz = em[1]; rest = rest.slice(0, em.index); } }
+  const color = rest.replace(/[()]/g, ' ').replace(/\s+/g, ' ').replace(/[\s\-–—]+$/, '').trim();
+  return { cat: 'Watch', model, gb: 0, memN: size, mem: size ? size + ' мм' : '', storage: size ? size + ' мм' : '', color, extra: sz.replace(/\s+/g, '').toUpperCase() };
+}
+
+// Вынимает из строки (iPhone) модель, память, тип SIM; остаток (цвет) возвращает в rest
 function ext(s) {
   const r = { model: null, gb: 0, sim: null, rest: '' };
   s = ' ' + s.replace(/айфон|iphone|\biph\b/gi, ' ')
@@ -180,6 +261,7 @@ function parseList(text) {
   for (let line of text.split(/\r?\n/)) {
     line = line.replace(/[\u00a0\u200e\u200f]/g, ' ').trim();
     if (!line || SKIP.test(line) || /non\s*active/i.test(line)) continue;
+    const reg = (line.match(FLAG) || [''])[0];
 
     // количество: "-3шт", " - 3 шт", "3 шт"
     let qty = 1;
@@ -192,22 +274,31 @@ function parseList(text) {
       if (price < 2000) continue;
       let np = line.slice(0, last.index);
       if (!/[A-Za-zА-Яа-яЁё]/.test(np)) np = line.slice(last.index + last[0].length);
+
+      const cat = classify(np);
+      if (cat !== 'iPhone') {                          // Samsung / Xiaomi / MacBook / AirPods / Watch
+        const p = cat === 'MacBook' ? parseMac(np) : cat === 'AirPods' ? parsePods(np) : cat === 'Watch' ? parseWatch(np) : parseSamsung(np, cat);
+        if (p) list.push({ sim: '', reg, qty, buyPrice: price, custom: null, ...p });
+        continue;
+      }
+
       const e = ext(np);
       const own = e.model && e.model !== cur.model;   // строка со своей моделью не наследует память/SIM шапки
       const model = e.model || cur.model;
       if (!model || e.rest.length > 30) continue;
-      const aed = price < 15000;
+      const aed = price < 15000 && !/₽|руб/i.test(line);   // дирхамы только у iPhone и без знака ₽
       const gb = e.gb || (own ? 0 : cur.gb);
       const sim = e.sim || (own ? null : cur.sim) || secSim || (aed ? 'SIM + eSIM' : 'eSIM');
       list.push({
-        model, gb, storage: gb >= 1024 ? gb / 1024 + ' ТБ' : gb ? gb + ' ГБ' : '', sim,
-        color: canonColor(e.rest), qty,
+        cat: 'iPhone', model, gb, memN: gb, mem: gb ? romLbl(gb) : '', storage: gb ? romLbl(gb) : '', sim,
+        color: colorFix(e.rest), extra: '', reg: '', qty,
         buyPrice: aed ? Math.round(price / AED_USD * rate) : price, custom: null
       });
       if (e.model && e.gb) cur = { model: null, gb: 0, sim: null };
       continue;
     }
-    // строка без цены: заголовок модели / отдельная строка SIM / память
+    // строка без цены (только iPhone): заголовок модели / отдельная строка SIM / память
+    if (classify(line) !== 'iPhone') continue;
     const e = ext(line);
     if (!e.model && !e.gb && !e.sim) continue;
     if (e.rest.split(' ').filter(Boolean).length > 3) continue;
@@ -225,17 +316,19 @@ function parseList(text) {
 const modelNum = m => parseInt(m) || 0;
 const modelRank = m => /max/i.test(m) ? 2 : /pro/i.test(m) ? 1 : /duo|air/i.test(m) ? 0.5 : 0;
 function sortList(arr) {
-  return arr.map((it, i) => ({ it, i })).sort((a, b) =>
-    (SIM_ORDER.indexOf(a.it.sim) - SIM_ORDER.indexOf(b.it.sim)) ||
-    (modelNum(b.it.model) - modelNum(a.it.model)) ||
-    (modelRank(a.it.model) - modelRank(b.it.model)) ||
-    a.it.model.localeCompare(b.it.model) ||
-    (a.it.gb - b.it.gb) || a.it.color.localeCompare(b.it.color) || (a.i - b.i)).map(x => x.it);
+  const first = {};
+  arr.forEach((it, i) => { const k = it.cat + '|' + it.model; if (!(k in first)) first[k] = i; });
+  return arr.map((it, i) => ({ it, i })).sort((a, b) => {
+    const x = a.it, y = b.it, d = secIdx(x) - secIdx(y);
+    if (d) return d;
+    if (x.cat === 'iPhone') return (modelNum(y.model) - modelNum(x.model)) || (modelRank(x.model) - modelRank(y.model)) || x.model.localeCompare(y.model) || (x.memN - y.memN) || x.color.localeCompare(y.color) || (a.i - b.i);
+    return (first[x.cat + '|' + x.model] - first[y.cat + '|' + y.model]) || (x.memN - y.memN) || (a.i - b.i);   // у остальных — порядок как в прайсе
+  }).map(z => z.it);
 }
 
 function colorDot(c) {
   c = (c || '').toUpperCase();
-  const map = [[/BLACK|NIGHT|SPACE|GRAY|GREY|GRAPHITE/, '⚫'], [/SILVER|WHITE|STARLIGHT/, '⚪'], [/BLUE|GLACIER|SKY/, '🔵'], [/ORANGE/, '🟠'], [/RED|BURGUNDY/, '🔴'], [/GREEN/, '🟢'], [/GOLD|YELLOW/, '🟡'], [/PURPLE|VIOLET|LAVENDER/, '🟣'], [/PINK/, '🩷'], [/TITANIUM|NATURAL|DESERT/, '🟤']];
+  const map = [[/GREEN|MINT/, '🟢'], [/BLACK|NIGHT|SPACE|GRAY|GREY|GRAPHITE|MIDNIGHT|CHARCOAL|JET/, '⚫'], [/SILVER|WHITE|STARLIGHT/, '⚪'], [/BLUE|GLACIER|SKY|NAVY|ICY|ICE/, '🔵'], [/ORANGE/, '🟠'], [/RED|BURGUNDY/, '🔴'], [/GOLD|YELLOW/, '🟡'], [/PURPLE|VIOLET|LAVENDER|LILAC/, '🟣'], [/PINK|ROSE/, '🩷'], [/TITANIUM|NATURAL|DESERT|BRONZE|SAND/, '🟤']];
   for (const [re, d] of map) if (re.test(c)) return d;
   return '▫️';
 }
@@ -263,19 +356,25 @@ window.applyMarkup = () => { markup = Number($('markupInput').value) || 0; rende
 window.setTheme = k => { themeIdx = k; try { localStorage.setItem('fzTheme', k); } catch (e) {} renderPosters(); };
 window.setBlockView = v => { viewMode = v; renderPosters(); };
 
-let fMem = new Set(), fModel = new Set();
-const memLabel = gb => gb >= 1024 ? gb / 1024 + ' ТБ' : gb ? gb + ' ГБ' : 'Не указана';
-const passF = it => (!fMem.size || fMem.has(it.gb)) && (!fModel.size || fModel.has(it.model));
+let fMem = new Set(), fModel = new Set(), fCat = new Set();
+const passF = it => (!fMem.size || fMem.has(it.mem)) && (!fModel.size || fModel.has(it.model)) && (!fCat.size || fCat.has(it.cat));
 const shown = () => items.filter(passF);
 function filtersHTML(src) {
-  const mems = [...new Set(src.map(i => i.gb))].sort((a, b) => a - b), mods = [...new Set(src.map(i => i.model))];
+  const mm = new Map(); src.forEach(i => { if (i.mem && !mm.has(i.mem)) mm.set(i.mem, i.memN + (/мм/.test(i.mem) ? 1e6 : 0)); });
+  const mems = [...mm].sort((a, b) => a[1] - b[1]).map(x => x[0]);
+  const mods = [...new Set(src.map(i => i.model))], cats = [...new Set(src.map(i => i.cat))], enc = encodeURIComponent;
   const chip = (l, on, fn) => `<button class="chip${on ? ' on' : ''}" onclick="${fn}">${l}</button>`;
-  return `<div class="frow"><span>Память:</span>${chip('Все', !fMem.size, "clrF('mem')")}${mems.map(g => chip(memLabel(g), fMem.has(g), `togF('mem',${g})`)).join('')}</div>
-    <div class="frow"><span>Модель:</span>${chip('Все', !fModel.size, "clrF('model')")}${mods.map(m => chip(esc(m), fModel.has(m), `togF('model','${encodeURIComponent(m)}')`)).join('')}</div>`;
+  const row = (t, set, k, chips) => `<div class="frow"><span>${t}</span>${chip('Все', !set.size, `clrF('${k}')`)}${chips}</div>`;
+  let h = '';
+  if (cats.length > 1) h += row('Раздел:', fCat, 'cat', cats.map(c => chip(CAT_LABEL[c], fCat.has(c), `togF('cat','${enc(c)}')`)).join(''));
+  if (mems.length) h += row('Память:', fMem, 'mem', mems.map(g => chip(esc(g), fMem.has(g), `togF('mem','${enc(g)}')`)).join(''));
+  h += row('Модель:', fModel, 'model', mods.map(m => chip(esc(m), fModel.has(m), `togF('model','${enc(m)}')`)).join(''));
+  return h;
 }
+const fSet = t => t === 'mem' ? fMem : t === 'cat' ? fCat : fModel;
 function refreshAll() { renderPosters(); if (cmpRows.length) renderCompare(); }
-window.togF = (t, k) => { const set = t === 'mem' ? fMem : fModel, v = t === 'mem' ? +k : decodeURIComponent(k); set.has(v) ? set.delete(v) : set.add(v); refreshAll(); };
-window.clrF = t => { (t === 'mem' ? fMem : fModel).clear(); refreshAll(); };
+window.togF = (t, k) => { const set = fSet(t), v = decodeURIComponent(k); set.has(v) ? set.delete(v) : set.add(v); refreshAll(); };
+window.clrF = t => { fSet(t).clear(); refreshAll(); };
 
 function updateStats() {
   let sum = 0, cnt = 0;
@@ -293,10 +392,11 @@ function posterHTML(list, id) {
     <div class="poster-brand" style="color:${t.brand}">FREE ZONE</div><div class="poster-subtitle" style="color:${t.sub}">ЛУЧШИЕ ЦЕНЫ</div><div class="poster-list">`;
   let lastSim = null, lastModel = null;
   list.forEach(it => {
-    if (it.sim !== lastSim) {
-      const sc = t.sims[Math.max(0, SIM_ORDER.indexOf(it.sim))];
-      h += `<div class="poster-section" style="color:${sc};background:${rgba(sc, .12)};border-color:${rgba(sc, .5)}">📲 iPhone • ${esc(it.sim)} 📱</div>`;
-      lastSim = it.sim; lastModel = null;
+    const sec = secOf(it);
+    if (sec !== lastSim) {
+      const sc = t.sims[Math.max(0, SEC_ORDER.indexOf(sec)) % 3], ic = CAT_ICON[it.cat];
+      h += `<div class="poster-section" style="color:${sc};background:${rgba(sc, .12)};border-color:${rgba(sc, .5)}">${ic} ${esc(sec)} ${it.cat === 'iPhone' ? '📱' : ic}</div>`;
+      lastSim = sec; lastModel = null;
     }
     const c = mcol(it.model);
     if (it.model !== lastModel) {
@@ -304,10 +404,9 @@ function posterHTML(list, id) {
       lastModel = it.model;
     }
     const idx = items.indexOf(it);
-    const q = it.qty > 1 ? `<span class="p-qty">${it.qty} шт</span>` : '';
-    const nm = [it.storage, it.color ? colorDot(it.color) + ' ' + it.color : ''].filter(Boolean).join(' • ') || it.model;
+    const nm = [it.storage, it.color ? colorDot(it.color) + ' ' + it.color : '', it.extra, it.reg].filter(Boolean).join(' • ') || it.model;
     h += `<div class="poster-item" style="background:${rgba(c, .10)};border-color:${rgba(c, .45)}">
-      <div class="p-name" style="color:${t.txt}">${esc(nm)} ${q}</div>
+      <div class="p-name" style="color:${t.txt}">${esc(nm)}</div>
       <div class="p-price" style="color:${c}"><span contenteditable="true" inputmode="numeric" data-i="${idx}" class="${it.custom != null ? 'custom-price' : ''}">${fmt(finalPrice(it))}</span> ₽</div></div>`;
   });
   h += `</div><div class="poster-footer" style="background:${t.footBg};border-color:${t.footBr}">
@@ -399,12 +498,13 @@ function copyText(txt) {
 }
 function blockText(k) {
   const list = blocks[k].list, models = uniqueModels();
-  let t = '📱 *ПРАЙС НА iPhone — FREE ZONE*\n', ls = null, lm = null, lst = null;
+  let t = (list.every(i => i.cat === 'iPhone') ? '📱 *ПРАЙС НА iPhone — FREE ZONE*' : '📱 *ПРАЙС — FREE ZONE*') + '\n', ls = null, lm = null, lst = null;
   list.forEach(it => {
-    if (it.sim !== ls) { t += `\n📲 *iPhone • ${it.sim}* 📱\n`; ls = it.sim; lm = null; lst = null; }
+    const sec = secOf(it), ip = it.cat === 'iPhone';
+    if (sec !== ls) { const ic = CAT_ICON[it.cat]; t += `\n${ic} *${sec}* ${ip ? '📱' : ic}\n`; ls = sec; lm = null; lst = null; }
     if (it.model !== lm) { const em = EMO[models.indexOf(it.model) % EMO.length]; t += `\n${em} *${it.model.toUpperCase()}* ${em}\n`; lm = it.model; lst = null; }
-    if (it.storage !== lst) { if (it.storage) t += `📲 *${it.model} • ${it.storage}* 📱\n`; lst = it.storage; }
-    t += `${colorDot(it.color)} ${it.color || it.model} — *${fmt(finalPrice(it))} ₽*${it.qty > 1 ? ` (${it.qty} шт)` : ''}\n`;
+    if (it.storage !== lst) { if (it.storage) t += ip ? `📲 *${it.model} • ${it.storage}* 📱\n` : `▪️ *${it.model} • ${it.storage}*\n`; lst = it.storage; }
+    t += `${colorDot(it.color)} ${[it.color || it.model, it.extra, it.reg].filter(Boolean).join(' ')} — *${fmt(finalPrice(it))} ₽*\n`;
   });
   t += `\n${ad.t1}\n${ad.s1}\n${ad.t2}\n${ad.s2}\n📞 ${ad.phone}`;
   return t;
@@ -420,9 +520,9 @@ window.runCompare = () => {
     const text = $('cmp' + s.toUpperCase()).value;
     if (!text.trim()) return;
     parseList(text).forEach(it => {
-      const k = [ign ? '' : it.sim, it.model.toUpperCase(), it.gb, /^glacier$/i.test(it.color) ? 'BLUE' : it.color.toUpperCase()].join('|');   // Glacier = Blue
+      const k = [ign ? '' : secOf(it), it.cat, it.model.toUpperCase(), it.storage, /^glacier$/i.test(it.color) ? 'BLUE' : it.color.toUpperCase(), it.cat === 'MacBook' ? '' : it.extra, ign ? '' : it.reg].join('|');   // Glacier = Blue
       let r = map.get(k);
-      if (!r) { r = { model: it.model, gb: it.gb, storage: it.storage, sim: it.sim, color: it.color, a: null, b: null, c: null, d: null, aQty: 1, bQty: 1, cQty: 1, dQty: 1 }; map.set(k, r); }
+      if (!r) { r = { cat: it.cat, model: it.model, gb: it.gb, memN: it.memN, mem: it.mem, storage: it.storage, sim: it.sim, color: it.color, extra: it.extra, reg: it.reg, a: null, b: null, c: null, d: null, aQty: 1, bQty: 1, cQty: 1, dQty: 1 }; map.set(k, r); }
       if (r[s] == null || it.buyPrice < r[s]) { r[s] = it.buyPrice; r[s + 'Qty'] = it.qty; }
     });
   });
@@ -467,12 +567,12 @@ function renderCompare() {
   rows.forEach(r => {
     let nm;
     if (grp) {
-      if (r.sim !== ls) { h += `<div class="cmp-sec">📲 iPhone • ${esc(r.sim)}</div>`; ls = r.sim; lm = null; lg = null; }
+      const sc = secOf(r); if (sc !== ls) { h += `<div class="cmp-sec">${CAT_ICON[r.cat]} ${esc(sc)}</div>`; ls = sc; lm = null; lg = null; }
       if (r.model !== lm) { h += `<div class="cmp-mod">${esc(r.model.toUpperCase())}</div>`; lm = r.model; lg = null; }
       if (r.storage !== lg) { h += `<div class="cmp-mem">💾 ${esc(r.storage || 'память не указана')}</div>`; lg = r.storage; }
-      nm = r.color ? colorDot(r.color) + ' ' + esc(r.color) : '—';
+      nm = [r.color ? colorDot(r.color) + ' ' + esc(r.color) : '—', esc(r.extra), r.reg].filter(Boolean).join(' · ');
     } else {
-      nm = `<b>${esc(r.model)} ${esc(r.storage)}</b><br>${r.color ? colorDot(r.color) + ' ' + esc(r.color) : ''}<br><small style="color:var(--mut)">${esc(r.sim)}</small>`;
+      nm = `<b>${esc(r.model)} ${esc(r.storage)}</b><br>${r.color ? colorDot(r.color) + ' ' + esc(r.color) : ''}<br><small style="color:var(--mut)">${esc(secOf(r))} ${esc(r.extra)} ${r.reg}</small>`;
     }
     const all = SIDES.map(s => r[s]);
     h += `<div class="cmp-row"><div class="cmp-name">${nm}</div>${all.map(p => cmpCell(p, all)).join('')}</div>`;
@@ -486,7 +586,7 @@ window.cmpToShow = () => {
   items = sortList(src0.map(r => {
     const best = Math.min(...SIDES.map(s => r[s]).filter(x => x != null));
     const src = SIDES.find(s => r[s] === best);
-    return { model: r.model, gb: r.gb, storage: r.storage, sim: r.sim, color: r.color, qty: r[src + 'Qty'] || 1, buyPrice: best, custom: null };
+    return { cat: r.cat, model: r.model, gb: r.gb, memN: r.memN, mem: r.mem, storage: r.storage, sim: r.sim, color: r.color, extra: r.extra, reg: r.reg, qty: r[src + 'Qty'] || 1, buyPrice: best, custom: null };
   }));
   $('markupBox').style.display = 'flex';
   $('statsBox').style.display = 'flex';
@@ -500,7 +600,7 @@ window.clearAll = () => {
   $('textInput').value = '';
   ['markupBox', 'statsBox'].forEach(id => $(id).style.display = 'none');
   $('postersOutput').innerHTML = '<div style="text-align:center;padding:30px;color:#64748b">Вставьте текст и нажмите «Рассчитать»</div>';
-  items = []; blocks = []; ad = { ...defaultAd }; fMem.clear(); fModel.clear();
+  items = []; blocks = []; ad = { ...defaultAd }; fMem.clear(); fModel.clear(); fCat.clear();
 };
 </script>
 </body>
