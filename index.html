@@ -158,9 +158,9 @@ const colorFix = s => canonColor(s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/
 
 const NOEMO = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\uFE0F\u200D\u20E3]/gu;
 const FLAG = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
-const CAT_LABEL = { iPhone: 'iPhone', Samsung: 'Samsung', Xiaomi: 'Xiaomi', Android: 'Android', MacBook: 'MacBook', AirPods: 'AirPods', Watch: 'Apple Watch' };
-const CAT_ICON = { iPhone: '📲', Samsung: '📱', Xiaomi: '📱', Android: '📱', MacBook: '💻', AirPods: '🎧', Watch: '⌚' };
-const SEC_ORDER = ['iPhone • SIM + eSIM', 'iPhone • SIM', 'iPhone • eSIM', 'Samsung', 'Xiaomi', 'Android', 'MacBook', 'AirPods', 'Apple Watch'];
+const CAT_LABEL = { iPhone: 'iPhone', Samsung: 'Samsung', Xiaomi: 'Xiaomi', Android: 'Android', MacBook: 'MacBook', AirPods: 'AirPods', Watch: 'Apple Watch', Other: 'Другое' };
+const CAT_ICON = { iPhone: '📲', Samsung: '📱', Xiaomi: '📱', Android: '📱', MacBook: '💻', AirPods: '🎧', Watch: '⌚', Other: '🎮' };
+const SEC_ORDER = ['iPhone • SIM + eSIM', 'iPhone • SIM', 'iPhone • eSIM', 'Samsung', 'Xiaomi', 'Android', 'MacBook', 'AirPods', 'Apple Watch', 'Другое'];
 const secOf = it => it.cat === 'iPhone' ? 'iPhone • ' + it.sim : CAT_LABEL[it.cat];
 const secIdx = it => { const i = SEC_ORDER.indexOf(secOf(it)); return i < 0 ? 99 : i; };
 const romLbl = n => n >= 1024 ? n / 1024 + ' ТБ' : n + ' ГБ';
@@ -171,6 +171,7 @@ const SAMS = /^(?:z\s*(?:fold|flip)|galaxy|[asmf]\d{2})/i;
 function classify(s) {
   s = s.replace(NOEMO, ' ').replace(/\s+/g, ' ').trim();
   if (/airpods/i.test(s)) return 'AirPods';
+  if (/macbook/i.test(s)) return 'MacBook';
   if (/^(?:macbook\s*)?(?:air|pro)\s*1\d\b/i.test(s) || /\(\s*M\d/.test(s)) return 'MacBook';
   if (/^(?:apple\s*watch\s*)?(?:(?:se\d?|s\d{1,2})\s+(?:3\d|4\d)(?![\d\/])|(?:ul|ultra)\s*\d)/i.test(s)) return 'Watch';
   if (/^(?:poco|redmi|xiaomi)/i.test(s)) return 'Xiaomi';
@@ -196,6 +197,12 @@ function parseSamsung(s, cat) {
 
 function parseMac(s) {
   s = s.replace(NOEMO, ' ').replace(/macbook/i, ' ').replace(/\s+/g, ' ').trim();
+  if (!/\(\s*M\d/.test(s)) {
+    const am = s.match(/(air|pro)/i), sz = s.match(/(1\d)\s*-?\s*(?:inch|дюйм\w*|["”″])/i) || s.match(/(?:air|pro)\s*(1\d)\b/i), rr = s.match(RAMROM);
+    if (!am || !sz) return null;
+    let rom = 0, ram = 0; if (rr) { ram = +rr[1]; rom = /tb/i.test(rr[2]) ? parseInt(rr[2]) * 1024 : +rr[2]; }
+    return { cat: 'MacBook', model: 'MacBook ' + cap(am[1]) + ' ' + sz[1], gb: rom, memN: rom, mem: rom ? romLbl(rom) : '', storage: rom ? (ram ? ram + '/' : '') + romLbl(rom) : '', color: '', extra: '' };
+  }
   const pm = s.match(/\(\s*(M\d(?:\s*(?:Pro|Max))?)\s+(\d{1,2})\s*\/\s*(\d+)\s*(tb|gb)?\s*\)/i);
   const mm = s.match(/^(air|pro)\s*(1\d)\b/i);
   if (!pm || !mm) return null;
@@ -255,11 +262,23 @@ function ext(s) {
   return r;
 }
 
+function parseGeneric(s) {
+  s = s.replace(NOEMO, ' ').replace(/[*_]/g, ' ').replace(/\s+/g, ' ').trim().replace(/[\s\-–—:]+$/, '');
+  let rom = 0, extra = '';
+  s = s.replace(/\(([^)]*)\)/g, (x, g) => { g = g.trim(); if (/^(?:\d+\s*(?:gb|гб)|[12]\s*(?:tb|тб)|128|256|512)$/i.test(g)) rom = /tb|тб/i.test(g) ? parseInt(g) * 1024 : parseInt(g); else if (g) extra = g; return ' '; }).replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  const model = s.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  return { cat: 'Other', model, gb: rom, memN: rom, mem: rom ? romLbl(rom) : '', storage: rom ? romLbl(rom) : '', color: '', extra };
+}
+
 function parseList(text) {
   const rate = getRate(), list = [];
+  // формат «▪️ Название / Цена: *69 000 ₽*» → одна строка; цена уже итоговая (§ = без наценки)
+  text = text.replace(/^([^\n]*\S[^\n]*)\n\s*цена\s*:?\s*\*?\s*([\d \u00a0.,]+?)\s*₽?\s*\*?[ \t]*$/gim, (m, n, p) => { const d = p.replace(/\D/g, ''); return d ? n + ' - ' + d + '§' : m; });
   let cur = { model: null, gb: 0, sim: null }, secSim = null;
   for (let line of text.split(/\r?\n/)) {
     line = line.replace(/[\u00a0\u200e\u200f]/g, ' ').trim();
+    const fin = line.includes('§'); line = line.replace(/§/g, '').replace(/\b(\d{1,3}) (\d{3})(?=\s*₽)/g, '$1$2');
     if (!line || SKIP.test(line) || /non\s*active/i.test(line)) continue;
     const reg = (line.match(FLAG) || [''])[0];
 
@@ -278,21 +297,24 @@ function parseList(text) {
       const cat = classify(np);
       if (cat !== 'iPhone') {                          // Samsung / Xiaomi / MacBook / AirPods / Watch
         const p = cat === 'MacBook' ? parseMac(np) : cat === 'AirPods' ? parsePods(np) : cat === 'Watch' ? parseWatch(np) : parseSamsung(np, cat);
-        if (p) list.push({ sim: '', reg, qty, buyPrice: price, custom: null, ...p });
+        if (p) list.push({ sim: '', reg, qty, buyPrice: price, custom: fin ? price : null, ...p });
         continue;
       }
 
       const e = ext(np);
       const own = e.model && e.model !== cur.model;   // строка со своей моделью не наследует память/SIM шапки
-      const model = e.model || cur.model;
-      if (!model || e.rest.length > 30) continue;
+      const model = e.model || (fin ? null : cur.model);
+      if (!model || e.rest.length > 30) {
+        if (fin) { const g = parseGeneric(np); if (g) list.push({ sim: '', reg, qty, buyPrice: price, custom: price, ...g }); }
+        continue;
+      }
       const aed = price < 15000 && !/₽|руб/i.test(line);   // дирхамы только у iPhone и без знака ₽
       const gb = e.gb || (own ? 0 : cur.gb);
       const sim = e.sim || (own ? null : cur.sim) || secSim || (aed ? 'SIM + eSIM' : 'eSIM');
       list.push({
         cat: 'iPhone', model, gb, memN: gb, mem: gb ? romLbl(gb) : '', storage: gb ? romLbl(gb) : '', sim,
         color: colorFix(e.rest), extra: '', reg: '', qty,
-        buyPrice: aed ? Math.round(price / AED_USD * rate) : price, custom: null
+        buyPrice: aed ? Math.round(price / AED_USD * rate) : price, custom: fin ? price : null
       });
       if (e.model && e.gb) cur = { model: null, gb: 0, sim: null };
       continue;
@@ -332,7 +354,6 @@ function colorDot(c) {
   for (const [re, d] of map) if (re.test(c)) return d;
   return '▫️';
 }
-
 /* ================= ВИТРИНА ================= */
 window.setView = v => {
   $('viewShow').style.display = v === 'show' ? 'block' : 'none';
@@ -605,3 +626,4 @@ window.clearAll = () => {
 </script>
 </body>
 </html>
+
