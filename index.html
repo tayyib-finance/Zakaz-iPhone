@@ -69,6 +69,27 @@ textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--br)
 .rate-box{border:1px solid var(--br);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .rate-box label{font-size:14px;font-weight:700;color:#f5c76a}
 .chk{display:flex;gap:8px;align-items:center;font-size:13px;color:#cbd5e1;margin-bottom:12px}
+.tabs{grid-template-columns:repeat(3,1fr)}.tabs .tab{font-size:13px;padding:11px 2px}
+.btn-b{background:#3b82f6;color:#fff}
+.dgt{font-size:13px;font-weight:800;color:#f5c76a;margin:14px 0 6px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dgrid label{font-size:11px;color:var(--mut);display:block}.dgrid .w{grid-column:span 2}
+.dgrid input{width:100%;margin-top:3px;background:var(--bg);border:1px solid var(--br);color:#fff;padding:10px;border-radius:8px;font-size:15px;outline:none}
+details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summary{cursor:pointer;font-weight:700;color:#cbd5e1}
+.paper{background:#fff;color:#000;padding:18px 16px;border-radius:8px;font:13px/1.5 "Times New Roman",Times,serif;text-align:justify}
+.paper *{font-family:"Times New Roman",Times,serif}
+.paper h1{font-size:15px;text-align:center;margin:0 0 8px}.paper h3{font-size:13px;text-align:center;margin:12px 0 4px}
+.paper p{margin:5px 0}.paper .r{display:flex;justify-content:space-between;margin-bottom:8px}
+.paper table{width:100%;border-collapse:collapse;margin-top:8px}.paper td,.paper th{border:1px solid #000;padding:4px 6px;text-align:center}
+.paper table.sig td{border:0;text-align:left;vertical-align:top;width:50%;padding:10px 6px 0}
+.paper .pb{page-break-before:always;margin-top:22px}
+@media print{
+  body{background:#fff;padding:0}
+  .container>.tabs,.container>#viewShow,.container>#viewCmp{display:none!important}
+  #viewDoc>*:not(#docPaper){display:none!important}
+  .paper{padding:0;border-radius:0;font-size:12pt}
+  @page{margin:15mm}
+}
 .ov{position:fixed;inset:0;background:#000;z-index:99;overflow:auto;text-align:center;padding:10px}
 .ov img{width:100%;max-width:600px}.ov p{color:#fff}.ov button{padding:12px 20px;margin:4px;border:0;border-radius:8px;font-weight:700;font-size:15px}
 </style>
@@ -77,7 +98,8 @@ textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--br)
 <div class="container">
   <div class="tabs">
     <button class="tab on" id="tabShow" onclick="setView('show')">📋 Витрина</button>
-    <button class="tab" id="tabCmp" onclick="setView('cmp')">⚖️ Сравнение (4)</button>
+    <button class="tab" id="tabCmp" onclick="setView('cmp')">⚖️ Сравнение</button>
+    <button class="tab" id="tabDoc" onclick="setView('doc')">📄 Договор</button>
   </div>
 
   <div id="viewShow">
@@ -118,6 +140,30 @@ textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--br)
       </div>
     </div>
     <div id="cmpOutput"></div>
+  </div>
+
+  <div id="viewDoc" style="display:none">
+    <div class="input-box">
+      <div class="note">Вставьте данные клиента одним текстом (ФИО, дата рождения, паспорт, кем и когда выдан, адрес, товар, цена) — поля заполнятся сами. Проверьте и поправьте при необходимости.</div>
+      <textarea id="docPaste" placeholder="Иванов Иван Иванович&#10;01.02.1990&#10;паспорт 8212 123456&#10;выдан МВД по РД 05.03.2015&#10;адрес: г. Махачкала, ул. ..."></textarea>
+      <div class="btn-grid" style="margin:0 0 10px">
+        <button class="btn btn-calc" onclick="docParse()">Заполнить поля</button>
+        <button class="btn btn-clear" onclick="docClear()">Очистить</button>
+      </div>
+      <select id="docPick" class="name-input" onchange="docPickItem()"></select>
+      <div id="docFields"></div>
+      <details class="dsel" open><summary>👤 Данные продавца (мои данные)</summary>
+        <div class="note" style="margin-top:8px">Заполните один раз — сохранится в браузере и будет подставляться во все договоры. Можно вставить одним текстом.</div>
+        <textarea id="sellPaste" style="height:80px" placeholder="ФИО, дата рождения, паспорт серии … номер …, выдан …, дата выдачи …, код подразделения …, зарегистрирован …"></textarea>
+        <div class="btn-grid" style="margin:0 0 8px"><button class="btn btn-b" onclick="sellParse()">Заполнить из текста</button><button class="btn btn-calc" onclick="sellSave()">💾 Сохранить</button></div>
+        <div id="docSeller" class="dgrid"></div></details>
+      <div class="btn-grid" style="margin:12px 0 0">
+        <button class="btn btn-calc" onclick="docPrint()">🖨 Печать / PDF</button>
+        <button class="btn btn-b" onclick="docCopy()">📋 Копировать текст</button>
+      </div>
+    </div>
+    <div id="docCalc" class="note"></div>
+    <div id="docPaper" class="paper"></div>
   </div>
 </div>
 
@@ -354,12 +400,15 @@ function colorDot(c) {
   for (const [re, d] of map) if (re.test(c)) return d;
   return '▫️';
 }
+
 /* ================= ВИТРИНА ================= */
 window.setView = v => {
-  $('viewShow').style.display = v === 'show' ? 'block' : 'none';
-  $('viewCmp').style.display = v === 'cmp' ? 'block' : 'none';
-  $('tabShow').classList.toggle('on', v === 'show');
-  $('tabCmp').classList.toggle('on', v === 'cmp');
+  for (const k of ['Show', 'Cmp', 'Doc']) {
+    const on = v.toLowerCase() === k.toLowerCase();
+    $('view' + k).style.display = on ? 'block' : 'none';
+    $('tab' + k).classList.toggle('on', on);
+  }
+  if (v === 'doc') docOpen();
 };
 window.onRate = () => { if (cmpRows.length) runCompare(); };
 
@@ -623,7 +672,209 @@ window.clearAll = () => {
   $('postersOutput').innerHTML = '<div style="text-align:center;padding:30px;color:#64748b">Вставьте текст и нажмите «Рассчитать»</div>';
   items = []; blocks = []; ad = { ...defaultAd }; fMem.clear(); fModel.clear(); fCat.clear();
 };
+/* ================= ДОГОВОР ================= */
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const M = x => +String(x || '').replace(/\D/g, '') || 0;
+const pad2 = n => String(n).padStart(2, '0');
+const fmtD = d => pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear();
+function parseD(s) {
+  const m = /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/.exec(String(s || '').trim());
+  if (!m) return null;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]);
+  return d.getMonth() === +m[2] - 1 ? d : null;
+}
+function addMonths(d, k) {
+  const x = new Date(d.getFullYear(), d.getMonth() + k, 1);
+  x.setDate(Math.min(d.getDate(), new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate()));
+  return x;
+}
+const shortName = f => { const p = String(f || '').trim().split(/\s+/).filter(Boolean); return p.length ? p[0] + (p[1] ? ' ' + p[1][0] + '.' : '') + (p[2] ? p[2][0] + '.' : '') : ''; };
+function numWords(n) {
+  n = Math.floor(n); if (!n) return 'ноль';
+  const u = ['','один','два','три','четыре','пять','шесть','семь','восемь','девять','десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
+  const t = ['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'];
+  const h = ['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
+  const tri = (x, fem) => {
+    const r = [h[Math.floor(x / 100)]], z = x % 100, one = e => fem && e === 1 ? 'одна' : fem && e === 2 ? 'две' : u[e];
+    if (z < 20) r.push(one(z)); else { r.push(t[Math.floor(z / 10)]); r.push(one(z % 10)); }
+    return r.filter(Boolean).join(' ');
+  };
+  const form = (x, a, b, c) => { const m = x % 100, d = x % 10; return m >= 11 && m <= 19 ? c : d === 1 ? a : d >= 2 && d <= 4 ? b : c; };
+  const mil = Math.floor(n / 1e6), th = Math.floor(n % 1e6 / 1e3), rest = n % 1e3, parts = [];
+  if (mil) parts.push(tri(mil, false) + ' ' + form(mil, 'миллион', 'миллиона', 'миллионов'));
+  if (th) parts.push(tri(th, true) + ' ' + form(th, 'тысяча', 'тысячи', 'тысяч'));
+  if (rest) parts.push(tri(rest, false));
+  return parts.join(' ');
+}
+
+// Разбор вставленного текста: ФИО, дата рождения, паспорт, кем/когда выдан, адрес, товар, цена
+function parseClient(t) {
+  const r = {};
+  t = t.replace(/\u00a0/g, ' ');
+  const MI = { января: 1, февраля: 2, марта: 3, апреля: 4, мая: 5, июня: 6, июля: 7, августа: 8, сентября: 9, октября: 10, ноября: 11, декабря: 12 };
+  t = t.replace(/(?<!\d)(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+(\d{4})(?:\s*г(?:ода|\.)?)?/gi, (m, d, mo, y) => pad2(d) + '.' + pad2(MI[mo.toLowerCase()]) + '.' + y);
+  const nd = x => x.replace(/[\/-]/g, '.').replace(/\b(\d)\./g, '0$1.').replace(/\.(\d)\./, '.0$1.');
+  const DT = '(\\d{1,2}[.\\/-]\\d{1,2}[.\\/-]\\d{4})';
+  const dates = (t.match(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}\b/g) || []).map(nd);
+  let m = t.match(new RegExp('(?:рожд[а-яё]*|д\\.?\\s?р\\.?)[^\\d\\n]{0,12}' + DT, 'i'));
+  r.bd = m ? nd(m[1]) : (dates[0] || '');
+  m = t.match(new RegExp('(?:дата\\s*выдачи|выдан[а-яё]*)[^\\d\\n]{0,80}?' + DT, 'i'));
+  r.pd = m ? nd(m[1]) : (dates.find(d => d !== r.bd) || '');
+  m = t.match(/сери[яи]\D{0,4}(\d{2}\s?\d{2})\D{0,15}номер\D{0,4}(\d{6})/i) || t.match(/(?<!\d)(\d{2}\s?\d{2})[\s,;№Nn\-]*(\d{6})(?!\d)/);
+  if (m) { r.ps = m[1].replace(/\s/g, ''); r.pn = m[2]; }
+  const code = t.match(/\b(\d{3}-\d{3})\b/);
+  m = t.match(/выдан[а-яё]*\s*[:\-]?\s*([^\n\d][^\n]*?)(?=\s*(?:[,;]?\s*(?:дата|код)|\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}|\d{3}-\d{3}|$))/im);
+  if (m) r.pw = m[1].replace(/[,;:\s]+$/, '');
+  else { const l = t.split('\n').find(l => /МВД|УФМС|ОУФМС|отдел/i.test(l)); if (l) r.pw = l.replace(/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}|\d{3}-\d{3}/g, '').replace(/[,;:\s]+$/, '').trim(); }
+  if (r.pw && code) r.pw += ', код подразделения ' + code[1];
+  m = t.match(/(?:адрес[^:\n]{0,25}|прописк[а-яё]*|зарегистрирован[а-яё]*|регистрация)\s*[:\-]?\s*([^\n]+)/i);
+  if (m && m[1].trim()) r.adr = m[1].replace(/[,;\s]*(?:именуем|далее|в дальнейшем).*$/i, '').trim();
+  else { const l = t.split('\n').find(l => /(г\.|ул\.|д\.|респ|обл|пр-кт|кв\.)/i.test(l) && !/выдан|МВД/i.test(l)); if (l) r.adr = l.trim(); }
+  const BAD = /респ|обл|мвд|дагест|махачкал|ул\.|выдан|паспорт/i;
+  m = t.match(/(?:фио|ф\.и\.о\.?|клиент|покупатель)\s*[:\-]\s*([^\n,;\d]+)/i);
+  let fio = m ? m[1].trim() : '';
+  if (!fio) for (const x of t.matchAll(/(?<![А-ЯЁа-яё])[А-ЯЁ][а-яёА-ЯЁ]+(?:\s+[А-ЯЁ][а-яёА-ЯЁ]+){1,2}(?![а-яё])/g)) { if (!BAD.test(x[0])) { fio = x[0]; break; } }
+  if (fio) r.fio = fio.split(/\s+/).map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  m = t.match(/(?:товар|модель)\s*[:\-]\s*([^\n]+)/i); if (m) r.item = m[1].trim();
+  m = t.match(/(?:цена|стоимость)\s*[:\-]?\s*([\d ]{4,})/i); if (m) r.price = String(M(m[1]));
+  m = t.match(/(?:предоплат[а-яё]*|аванс|первый\s*взнос)\s*[:\-]?\s*([\d ]{3,})/i); if (m) r.pre = String(M(m[1]));
+  m = t.match(/(\d{1,2})\s*мес/i); if (m) r.mon = m[1];
+  return r;
+}
+
+const DG = [
+  ['Договор', [['num', '№ договора'], ['date', 'Дата договора (дд.мм.гггг)']]],
+  ['Покупатель', [['fio', 'ФИО', 1], ['bd', 'Дата рождения'], ['pd', 'Дата выдачи паспорта'], ['ps', 'Серия паспорта'], ['pn', 'Номер паспорта'], ['pw', 'Кем выдан', 1], ['adr', 'Адрес регистрации', 1]]],
+  ['Товар и оплата', [['item', 'Товар', 1], ['price', 'Стоимость товара, ₽'], ['mark', 'Торговая накидка, ₽'], ['pre', 'Предоплата, ₽'], ['mon', 'Срок, месяцев']]],
+  ['Поручитель (если есть)', [['gfio', 'ФИО', 1], ['gbd', 'Дата рождения'], ['gpd', 'Дата выдачи паспорта'], ['gps', 'Серия'], ['gpn', 'Номер'], ['gpw', 'Кем выдан', 1], ['gadr', 'Адрес регистрации', 1]]]
+];
+const SELLER = [['sfio', 'ФИО продавца', '', 1], ['sbd', 'Дата рождения (например 13 апреля 2001)', ''], ['spd', 'Дата выдачи паспорта', ''], ['sps', 'Серия паспорта', ''], ['spn', 'Номер паспорта', ''], ['spw', 'Кем выдан', '', 1], ['sc', 'Код подразделения', ''], ['sadr', 'Адрес регистрации', '', 1]];
+
+function docBuild() {
+  $('docFields').innerHTML = DG.map(([t, f]) => `<div class="dgt">${t}</div><div class="dgrid">${f.map(([id, l, w]) => `<label class="${w ? 'w' : ''}">${l}<input id="d_${id}" autocomplete="off"></label>`).join('')}</div>`).join('');
+  let sv = {}; try { sv = JSON.parse(localStorage.getItem('fzSeller') || '{}'); } catch (e) {}
+  $('docSeller').innerHTML = SELLER.map(([id, l, def, w]) => `<label class="${w ? 'w' : ''}">${l}<input id="d_${id}" value="${esc(sv[id] != null ? sv[id] : def)}" autocomplete="off"></label>`).join('');
+  $('d_date').value = fmtD(new Date());
+  $('d_mon').value = '';
+  $('docFields').addEventListener('input', docRender);
+  $('docSeller').addEventListener('input', () => { saveSeller(); docRender(); });
+}
+function saveSeller() { const o = {}; SELLER.forEach(([id]) => o[id] = $('d_' + id).value); try { localStorage.setItem('fzSeller', JSON.stringify(o)); return true; } catch (e) { return false; } }
+window.sellSave = () => { alert(saveSeller() ? 'Данные продавца сохранены' : 'Не удалось сохранить в этом браузере'); docRender(); };
+window.sellParse = () => {
+  const t = $('sellPaste').value, r = parseClient(t);
+  if (!Object.keys(r).length) return alert('Не удалось распознать. Заполните поля вручную.');
+  const cm = t.match(/\b(\d{3}-\d{3})\b/), bd = parseD(r.bd), put = (id, v) => { if (v) $('d_' + id).value = v; };
+  put('sfio', r.fio); put('sbd', bd ? bd.getDate() + ' ' + MONTHS[bd.getMonth()] + ' ' + bd.getFullYear() : '');
+  put('sps', r.ps); put('spn', r.pn); put('spw', (r.pw || '').replace(/,?\s*код подразделения.*$/i, '')); put('spd', r.pd); put('sc', cm ? cm[1] : ''); put('sadr', r.adr);
+  saveSeller(); docRender();
+};
+const docData = () => { const d = {}; [...DG.flatMap(g => g[1]), ...SELLER].forEach(([id]) => { const el = $('d_' + id); d[id] = el ? el.value.trim() : ''; }); return d; };
+const itemTitle = it => it.cat === 'iPhone' ? ['iPhone', it.model, it.storage, it.color, '(' + it.sim + ')'].filter(Boolean).join(' ') : [it.model, it.storage, it.color, it.extra].filter(Boolean).join(' ');
+
+function docOpen() {
+  $('docPick').innerHTML = '<option value="">Выбрать товар из витрины…</option>' + items.map((it, i) => `<option value="${i}">${esc(itemTitle(it))} — ${fmt(finalPrice(it))} ₽</option>`).join('');
+  docRender();
+}
+window.docPickItem = () => { const i = $('docPick').value; if (i === '') return; const it = items[+i]; $('d_item').value = itemTitle(it); $('d_price').value = finalPrice(it); docRender(); };
+window.docParse = () => {
+  const r = parseClient($('docPaste').value);
+  if (!Object.keys(r).length) return alert('Не удалось распознать данные. Заполните поля вручную.');
+  Object.entries(r).forEach(([k, v]) => { const el = $('d_' + k); if (el && v) el.value = v; });
+  docRender();
+};
+window.docClear = () => {
+  $('docPaste').value = '';
+  DG.flatMap(g => g[1]).forEach(([id]) => { if (id !== 'date') $('d_' + id).value = ''; });
+  $('docPick').value = '';
+  docRender();
+};
+window.docPrint = () => window.print();
+window.docCopy = () => copyText($('docPaper').innerText);
+
+function docRender() {
+  const d = docData(), price = M(d.price), mark = M(d.mark), pre = M(d.pre), mon = parseInt(d.mon) || 0, full = price + mark, rest = Math.max(0, full - pre);
+  const monthly = mon && rest ? Math.ceil(rest / mon) : 0;
+  $('docCalc').innerHTML = (d.sfio ? '' : '<b style="color:#fca5a5">⚠️ Заполните данные продавца (раздел выше).</b><br>') + (full ? `Полная стоимость: <b>${fmt(full)} ₽</b> · после предоплаты: <b>${fmt(rest)} ₽</b>` + (monthly ? ` · платёж в месяц: <b>${fmt(monthly)} ₽</b>` : '') : 'Введите стоимость товара — расчёт появится здесь');
+  $('docPaper').innerHTML = docHTML(d, d);
+}
+
+function docHTML(d, s) {
+  const V = (x, n = 14) => x ? `<b>${esc(x)}</b>` : '_'.repeat(n);
+  const R = x => x ? `<b>${fmt(x)}</b>` : '____________';
+  const price = M(d.price), mark = M(d.mark), pre = M(d.pre), mon = parseInt(d.mon) || 0, full = price + mark, rest = Math.max(0, full - pre);
+  const dt = parseD(d.date);
+  const dstr = dt ? `«${pad2(dt.getDate())}» ${MONTHS[dt.getMonth()]} ${dt.getFullYear()} г.` : '«____» ____________ 2026 г.';
+  const num = d.num ? esc(d.num) : '_____';
+  let sch = '';
+  if (mon && rest) {
+    const monthly = Math.ceil(rest / mon);
+    let rows = '', left = rest;
+    for (let i = 1; i <= mon; i++) {
+      const amt = i < mon ? monthly : Math.max(0, rest - monthly * (mon - 1));
+      left -= amt;
+      rows += `<tr><td>${i}</td><td>${dt ? fmtD(addMonths(dt, i)) : '__.__.____'}</td><td>${fmt(amt)} ₽</td><td>${fmt(Math.max(0, left))} ₽</td></tr>`;
+    }
+    sch = `<table><tr><th>№</th><th>Дата платежа</th><th>Сумма платежа</th><th>Остаток долга</th></tr>${rows}</table>
+      <p>Полная стоимость Товара: <b>${fmt(full)}</b> руб.; предварительная оплата: <b>${fmt(pre)}</b> руб.; к оплате в рассрочку: <b>${fmt(rest)}</b> руб. в течение ${mon} мес.</p>`;
+  } else sch = '<p>График платежей заполняется вручную (укажите стоимость, предоплату и срок).</p>';
+  return `
+<h1>Договор купли-продажи товара с рассрочкой платежа №${num}</h1>
+<div class="r"><span>г. Махачкала</span><span>${dstr}</span></div>
+<p>${V(s.sfio)}, ${V(s.sbd)} года рождения, паспорт серии ${V(s.sps, 6)} номер ${V(s.spn, 8)}, выдан: ${V(s.spw)}, дата выдачи: ${V(s.spd)}г., код подразделения: ${V(s.sc)}, зарегистрирован: ${V(s.sadr)}, именуемый в дальнейшем «Продавец», с одной стороны, ${V(d.fio, 40)}, дата рождения: ${V(d.bd, 10)}г., паспорт серии ${V(d.ps, 6)} номер ${V(d.pn, 8)} выдан ${V(d.pw, 40)}, дата выдачи: ${V(d.pd, 10)}г., адрес регистрации: ${V(d.adr, 40)}, именуемый в дальнейшем «Покупатель», с другой стороны, а вместе именуемые «Стороны», заключили настоящий договор купли-продажи товара с рассрочкой платежа о нижеследующем.</p>
+<h3>1. Предмет договора</h3>
+<p>1.1. По настоящему Договору Продавец обязуется передать в собственность Покупателя, а Покупатель обязуется принять ${V(d.item, 40)}, (далее - Товар) и оплатить за него установленную настоящим договором цену в соответствии с Графиком погашения задолженности (далее - Приложение 1), являющимся неотъемлемой частью настоящего договора.</p>
+<h3>2. Права и обязанности Сторон</h3>
+<p>2.1. Продавец имеет право:</p>
+<p>2.1.1. Потребовать возврата Товара у Покупателя при несвоевременной его оплате, в сроки установленные настоящим договором, для его последующей реализации.</p>
+<p>2.2. Продавец обязан:</p>
+<p>2.2.1. Передать Покупателю Товар надлежащего качества, в количестве, ассортименте и комплектации в соответствии с настоящим Договором.</p>
+<p>2.2.2. Передать Покупателю Товар в упаковке (в случае, если она предусмотрена), обеспечивающей сохранность товаров такого рода при обычных условиях хранения и транспортирования. Одновременно с передачей Товара передать Покупателю соответствующие принадлежности (если таковые предусмотрены).</p>
+<p>2.2.3. Подписать Акт приема-передачи товара, свидетельствующий о проверке и согласии покупателя на приобретение данного товара в данном состоянии на момент осуществления сделки купли-продажи в рассрочку.</p>
+<p>2.3. Покупатель имеет право:</p>
+<p>2.3.1. Потребовать замены Товара в соответствии с законодательством РФ до момента подписания акта приема-передачи.</p>
+<p>2.3.2. Досрочно вносить платежи в счет оплаты Товара.</p>
+<p>2.4. Покупатель обязан:</p>
+<p>2.4.1. Принять Товар в соответствии с условиями договора.</p>
+<p>2.4.2. Совершать все необходимые действия, обеспечивающие своевременное принятие Товара.</p>
+<p>2.4.3. За свой счет и своими силами вывезти Товар от Продавца, со дня подписания настоящего договора. Вся ответственность за сохранность товара лежит на покупателе после подписания договора купли-продажи в рассрочку и акта приема-передачи товара.</p>
+<p>2.4.4. Своевременно производить оплату Товара в соответствии с настоящим Договором и графиком погашения, являющегося неотъемлемой частью настоящего договора.</p>
+<h3>3. Цена договора и порядок расчетов</h3>
+<p>3.1. Покупатель оплачивает Товар на условиях рассрочки платежа.</p>
+<p>3.2. Полная стоимость Товара составляет ${R(full)}${full ? ` (${numWords(full)})` : ''} рублей, в том числе стоимость товара ${R(price)} рублей и сумма торговой накидки ${R(mark)} рублей.</p>
+<p>3.3. В момент заключения договора Покупатель производит предварительную оплату товара в размере ${R(pre)} рублей. Оставшуюся стоимость Покупатель выплачивает в соответствии с Приложением №1 (график погашения стоимости товара).</p>
+<p>3.4. Полную стоимость Покупатель выплачивает в течение ${mon ? `<b>${mon}</b>` : '____'} месяцев с момента заключения настоящего договора.</p>
+<p>3.5. Оплата за Товар производится в наличной и безналичной форме.</p>
+<h3>4. Обеспечение исполнения обязательств по договору</h3>
+<p>4.1. Обязательства Покупателя по внесению платежей, в соответствии с Приложением 1, обеспечиваются залогом приобретенного Товара (далее - Предмет залога), указанного в п. 1.1. настоящего Договора.</p>
+<p>4.1.1. Подписанием настоящего договора Покупатель предоставляет купленный согласно настоящему договору товар в залог до момента полного погашения его стоимости. В силу настоящего договора Продавец приобретает все права залогодержателя, предусмотренные гражданским законодательством.</p>
+<p>Поручителями Покупателя по настоящему Договору являются: ${V(d.gfio, 40)}, дата рождения: ${V(d.gbd, 10)}г., паспортные данные: серия ${V(d.gps, 6)} номер ${V(d.gpn, 8)} выдан: ${V(d.gpw, 40)}, дата выдачи: ${V(d.gpd, 10)}г., адрес регистрации: ${V(d.gadr, 40)}.</p>
+<h3>5. Ответственность Сторон</h3>
+<p>5.1. Стороны несут ответственность за неисполнение или ненадлежащее исполнение настоящего Договора в соответствии с действующим законодательством и настоящим Договором.</p>
+<p>5.2. Продавец отвечает за недостатки Товара, возникшие до его передачи Покупателю и подписания соответствующего акта приема-передачи.</p>
+<h3>6. Расторжение договора</h3>
+<p>6.1. Ни одна из Сторон не вправе в одностороннем порядке отказаться от исполнения обязательств за исключением случаев, предусмотренных настоящим Договором.</p>
+<p>6.2. При нарушении Покупателем сроков оплаты Товара, предусмотренных Приложением №1 более одного раза, либо задержке платежа более чем на 1 (один) месяц, Продавец вправе отказаться в одностороннем порядке от исполнения настоящего Договора и обратить взыскание на Предмет залога в соответствии с разделом 4 настоящего Договора.</p>
+<h3>7. Разрешение споров</h3>
+<p>7.1. Споры и разногласия по настоящему договору, если они не будут разрешены путем переговоров, подлежат разрешению в суде по месту регистрации Продавца.</p>
+<h3>8. Обстоятельства непреодолимой силы</h3>
+<p>8.1. При наступлении обстоятельств, препятствующих полному или частичному исполнению любой из Сторон обязательств по настоящему Договору, а именно: пожара, стихийных бедствий или других независящих от Сторон обстоятельств, срок исполнения обязательств по настоящему Договору отодвигается соразмерно времени, в течение которого будут действовать такие обстоятельства.</p>
+<h3>9. Заключительные положения</h3>
+<p>9.1. С момента передачи Товара Покупателю до его полной оплаты, Стороны признают, что Товар находится в залоге у Продавца для обеспечения исполнения Покупателем его обязательств по оплате Товара.</p>
+<p>9.2. Во всем остальном, что не предусмотрено настоящим Договором, Стороны руководствуются действующим законодательством Российской Федерации.</p>
+<p>9.3. Все изменения, приложения, дополнения, уведомления и сообщения по настоящему Договору являются неотъемлемой частью настоящего Договора и действительны в том случае, если они совершены в письменной форме и подписаны уполномоченными представителями Сторон. Сообщения будут считаться направленными надлежащим образом, если они посланы заказным письмом или доставлены лично с получением под расписку.</p>
+<p>9.4. Настоящий Договор составлен в двух экземплярах, имеющих равную юридическую силу, по одному для каждой из Сторон.</p>
+<p>9.5. В случае изменения любого из указанных в настоящем Договоре реквизитов соответствующая Сторона обязуется уведомить другую Сторону любым доступным способом в течение 3 (трех) рабочих дней с момента наступления такого изменения.</p>
+<h3>10. Подписи Сторон</h3>
+<table class="sig"><tr><td>Продавец:<br><br>______________ / ${esc(shortName(s.sfio)) || '____________'}<br><small>(подпись / Ф.И.О.)</small></td><td>Покупатель:<br><br>______________ / ${esc(shortName(d.fio)) || '____________'}<br><small>(подпись / Ф.И.О.)</small></td></tr></table>
+<div class="pb"></div>
+<h1>Приложение №1</h1>
+<p style="text-align:center">к Договору купли-продажи товара с рассрочкой платежа №${num} от ${dt ? fmtD(dt) : '__.__.____'}<br>График погашения задолженности</p>
+${sch}
+<table class="sig"><tr><td>Продавец:<br><br>______________ / ${esc(shortName(s.sfio)) || '____________'}</td><td>Покупатель:<br><br>______________ / ${esc(shortName(d.fio)) || '____________'}</td></tr></table>`;
+}
+docBuild();
+
 </script>
 </body>
 </html>
-
