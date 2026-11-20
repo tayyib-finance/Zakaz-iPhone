@@ -76,11 +76,14 @@ textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--br)
 .dgrid label{font-size:11px;color:var(--mut);display:block}.dgrid .w{grid-column:span 2}
 .dgrid input{width:100%;margin-top:3px;background:var(--bg);border:1px solid var(--br);color:#fff;padding:10px;border-radius:8px;font-size:15px;outline:none}
 details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summary{cursor:pointer;font-weight:700;color:#cbd5e1}
-.paper{background:#fff;color:#000;padding:18px 16px;border-radius:8px;font:13px/1.5 "Times New Roman",Times,serif;text-align:justify}
+.paper{background:#fff;color:#000;padding:18px 16px;border-radius:8px;font:var(--pfs,13px)/1.5 "Times New Roman",Times,serif;text-align:justify}
 .paper *{font-family:"Times New Roman",Times,serif}
 .paper h1{font-size:1.15em;text-align:center;margin:0 0 .4em}.paper h3{font-size:1em;text-align:center;margin:.6em 0 .2em;break-after:avoid}
 .paper p{margin:.3em 0}.paper .r{display:flex;justify-content:space-between;margin-bottom:.4em}
-.paper table{width:100%;border-collapse:collapse;margin-top:.5em}.paper td,.paper th{border:1px solid #000;padding:.15em .45em;text-align:center}
+.paper table{width:100%;border-collapse:collapse;margin-top:.5em;break-inside:auto}
+.paper thead{display:table-header-group}
+.paper tr{break-inside:avoid}
+.paper td,.paper th{border:1px solid #000;padding:.12em .4em;text-align:center;font-size:.92em}
 .paper table.sig td{border:0;text-align:left;vertical-align:top;width:50%;padding:.5em .4em 0}
 .paper .pb{page-break-before:always;margin-top:22px}
 @media print{
@@ -88,13 +91,13 @@ details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summar
   .container{max-width:none!important;margin:0!important}
   .container>.tabs,.container>#viewShow,.container>#viewCmp{display:none!important}
   #viewDoc>*:not(#docPaper){display:none!important}
-  .paper{padding:10mm 11mm;border-radius:0;font-size:9.5pt;line-height:1.24}
+  .paper{padding:10mm 11mm;border-radius:0;font-size:var(--pfs,9.5pt);line-height:1.24}
   .paper h1{font-size:12pt;margin:0 0 4px}
   .paper h3{font-size:9.5pt;margin:5px 0 1px}
   .paper p{margin:1.5px 0}
   .paper .r{margin-bottom:4px}
-  .paper table{margin-top:4px;break-inside:avoid}
-  .paper td,.paper th{padding:1px 5px;font-size:9pt}
+  .paper table{margin-top:4px;font-size:.9em}
+  .paper td,.paper th{padding:1px 4px;font-size:9pt}
   .paper table.sig td{padding:6px 6px 0}
   .paper .pb{break-before:avoid;page-break-before:avoid;margin-top:8px}
   @page{size:A4;margin:0}
@@ -164,11 +167,18 @@ details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summar
       <details class="dsel" open><summary>👤 Данные продавца (мои данные)</summary>
         <div class="note" style="margin-top:8px">Заполните один раз — сохранится в браузере и будет подставляться во все договоры. Можно вставить одним текстом.</div>
         <textarea id="sellPaste" style="height:80px" placeholder="ФИО, дата рождения, паспорт серии … номер …, выдан …, дата выдачи …, код подразделения …, зарегистрирован …"></textarea>
-        <div class="btn-grid" style="margin:0 0 8px"><button class="btn btn-b" onclick="sellParse()">Заполнить из текста</button><button class="btn btn-calc" onclick="sellSave()">💾 Сохранить</button></div>
+        <div class="btn-grid" style="margin:0 0 8px">
+          <button class="btn btn-b" onclick="sellParse()">Заполнить из текста</button>
+          <button class="btn btn-calc" onclick="sellSave()">💾 Сохранить</button>
+          <button class="btn btn-clear" onclick="sellReset()">↺ Сбросить к моим</button>
+        </div>
         <div id="docSeller" class="dgrid"></div></details>
       <div class="btn-grid" style="margin:12px 0 0">
         <button class="btn btn-calc" onclick="docPrint()">🖨 Печать / PDF (2 листа)</button>
         <button class="btn btn-b" onclick="docCopy()">📋 Копировать текст</button>
+      </div>
+      <div class="btn-grid" style="margin:8px 0 0">
+        <button class="btn btn-b" onclick="docDownloadHTML()">💾 Скачать HTML (редактируемый)</button>
       </div>
     </div>
     <div id="docCalc" class="note"></div>
@@ -208,7 +218,6 @@ const cap = w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
 const SKIP = /гарант|наличи|контакт|рабоч|обращать|телефон|whatsapp|вацап|бронь|аванс|оплата|выдача|пред.?заказ|coming|\$|€|прайс|актуальн|доставк|рассрочк|курс|актив|active|\+?[78][\s(-]*\d{3}[\s)-]*\d{3}[\s-]*\d{2}|\b\d{1,2}\.\d{1,2}(\.\d{2,4})?\b/i;
 const COLORS = [[/^burg/i,'Burgundy'],[/^glac/i,'Glacier'],[/^silv/i,'Silver'],[/^blac/i,'Black'],[/^(черн|чёрн)/i,'Black'],[/^серебр/i,'Silver'],[/^(син|голуб)/i,'Blue'],[/^(глас|глей|глэй)/i,'Glacier'],[/^бург/i,'Burgundy'],[/^бел/i,'White'],[/^оранж/i,'Orange'],[/^зел/i,'Green'],[/^роз/i,'Pink'],[/^(фиол|сирен)/i,'Purple'],[/^золот/i,'Gold'],[/^сер/i,'Gray']];
 const canonColor = s => s.split(' ').filter(Boolean).map(w => { for (const [re, en] of COLORS) if (re.test(w)) return en; return cap(w); }).join(' ');
-// GrayGreen → Gray Green, Iceblue/Icyblue → Icy Blue, Grey → Gray, "Awesome" убираем
 const colorFix = s => canonColor(s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\bawesome\b/gi, ' ').replace(/\b(icy|ice)\s*blue\b/gi, 'Icy Blue').replace(/\bgrey\b/gi, 'Gray').replace(/\s+/g, ' ').trim());
 
 const NOEMO = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\uFE0F\u200D\u20E3]/gu;
@@ -222,7 +231,6 @@ const romLbl = n => n >= 1024 ? n / 1024 + ' ТБ' : n + ' ГБ';
 const RAMROM = /\b(\d{1,2})\s*\/\s*(\d{2,4}|[12]\s*tb)\s*(?:gb|гб|tb|тб)?(?![a-z\d])/i;
 const SAMS = /^(?:z\s*(?:fold|flip)|galaxy|[asmf]\d{2})/i;
 
-// Определяем тип товара по строке (до разбора)
 function classify(s) {
   s = s.replace(NOEMO, ' ').replace(/\s+/g, ' ').trim();
   if (/airpods/i.test(s)) return 'AirPods';
@@ -264,7 +272,7 @@ function parseMac(s) {
   const chip = pm[1].split(/\s+/).map((w, i) => i ? cap(w) : w.toUpperCase()).join(' ');
   let rom = +pm[3]; if (/tb/i.test(pm[4] || '') || rom <= 4) rom *= 1024;
   let rest = s.replace(pm[0], ' ').slice(mm[0].length);
-  const sk = rest.match(/\b(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])[A-Z0-9]{4,12}\b/);   // артикул MDHH4, Z1L30013A…
+  const sk = rest.match(/\b(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])[A-Z0-9]{4,12}\b/);
   if (sk) rest = rest.replace(sk[0], ' ');
   return { cat: 'MacBook', model: 'MacBook ' + cap(mm[1]) + ' ' + mm[2], gb: rom, memN: rom, mem: romLbl(rom), storage: chip + ' ' + pm[2] + '/' + (rom >= 1024 ? rom / 1024 + 'TB' : rom), color: colorFix(rest.replace(/[^\p{L}\s]/gu, ' ')), extra: sk ? sk[0] : '' };
 }
@@ -297,13 +305,12 @@ function parseWatch(s) {
   return { cat: 'Watch', model, gb: 0, memN: size, mem: size ? size + ' мм' : '', storage: size ? size + ' мм' : '', color, extra: sz.replace(/\s+/g, '').toUpperCase() };
 }
 
-// Вынимает из строки (iPhone) модель, память, тип SIM; остаток (цвет) возвращает в rest
 function ext(s) {
   const r = { model: null, gb: 0, sim: null, rest: '' };
   s = ' ' + s.replace(/айфон|iphone|\biph\b/gi, ' ')
     .replace(/(?<![а-яё])про(?![а-яё])/gi, 'Pro')
-    .replace(/(?<![a-zа-яё])[mм][aа][kкx][cсx]?\.?(?![a-zа-яё])/gi, 'Max')      // Макс / Makc / Mакс / Max
-    .replace(/(?<![а-яё])е\s*-?\s*(?:sim|сим)/gi, 'esim') + ' ';                 // Е-сим / Еsim (кириллица)
+    .replace(/(?<![a-zа-яё])[mм][aа][kкx][cсx]?\.?(?![a-zа-яё])/gi, 'Max')
+    .replace(/(?<![а-яё])е\s*-?\s*(?:sim|сим)/gi, 'esim') + ' ';
   let m;
   if ((m = s.match(/(?:\b[12]\s*)?sim\s*[+\/&,]\s*e-?sim|e-?sim\s*[+\/&,]\s*sim|\b[12]\s*sim\b/i))) { r.sim = 'SIM + eSIM'; s = s.replace(m[0], ' '); }
   else if ((m = s.match(/e-?sim/i))) { r.sim = 'eSIM'; s = s.replace(m[0], ' '); }
@@ -328,7 +335,6 @@ function parseGeneric(s) {
 
 function parseList(text) {
   const rate = getRate(), list = [];
-  // формат «▪️ Название / Цена: *69 000 ₽*» → одна строка; цена уже итоговая (§ = без наценки)
   text = text.replace(/^([^\n]*\S[^\n]*)\n\s*цена\s*:?\s*\*?\s*([\d \u00a0.,]+?)\s*₽?\s*\*?[ \t]*$/gim, (m, n, p) => { const d = p.replace(/\D/g, ''); return d ? n + ' - ' + d + '§' : m; });
   let cur = { model: null, gb: 0, sim: null }, secSim = null;
   for (let line of text.split(/\r?\n/)) {
@@ -337,7 +343,6 @@ function parseList(text) {
     if (!line || SKIP.test(line) || /non\s*active/i.test(line)) continue;
     const reg = (line.match(FLAG) || [''])[0];
 
-    // количество: "-3шт", " - 3 шт", "3 шт"
     let qty = 1;
     const qm = line.match(/(?:[-–—]\s*)?\b(\d{1,3})\s*(?:шт|штук\w*|pcs)\.?/i);
     if (qm) { qty = +qm[1] || 1; line = line.replace(qm[0], ' ').trim(); }
@@ -350,20 +355,20 @@ function parseList(text) {
       if (!/[A-Za-zА-Яа-яЁё]/.test(np)) np = line.slice(last.index + last[0].length);
 
       const cat = classify(np);
-      if (cat !== 'iPhone') {                          // Samsung / Xiaomi / MacBook / AirPods / Watch
+      if (cat !== 'iPhone') {
         const p = cat === 'MacBook' ? parseMac(np) : cat === 'AirPods' ? parsePods(np) : cat === 'Watch' ? parseWatch(np) : parseSamsung(np, cat);
         if (p) list.push({ sim: '', reg, qty, buyPrice: price, custom: fin ? price : null, ...p });
         continue;
       }
 
       const e = ext(np);
-      const own = e.model && e.model !== cur.model;   // строка со своей моделью не наследует память/SIM шапки
+      const own = e.model && e.model !== cur.model;
       const model = e.model || (fin ? null : cur.model);
       if (!model || e.rest.length > 30) {
         if (fin) { const g = parseGeneric(np); if (g) list.push({ sim: '', reg, qty, buyPrice: price, custom: price, ...g }); }
         continue;
       }
-      const aed = price < 15000 && !/₽|руб/i.test(line);   // дирхамы только у iPhone и без знака ₽
+      const aed = price < 15000 && !/₽|руб/i.test(line);
       const gb = e.gb || (own ? 0 : cur.gb);
       const sim = e.sim || (own ? null : cur.sim) || secSim || (aed ? 'SIM + eSIM' : 'eSIM');
       list.push({
@@ -374,17 +379,16 @@ function parseList(text) {
       if (e.model && e.gb) cur = { model: null, gb: 0, sim: null };
       continue;
     }
-    // строка без цены (только iPhone): заголовок модели / отдельная строка SIM / память
     if (classify(line) !== 'iPhone') continue;
     const e = ext(line);
     if (!e.model && !e.gb && !e.sim) continue;
     if (e.rest.split(' ').filter(Boolean).length > 3) continue;
     if (e.model) {
-      if (!e.gb && e.rest) continue;                 // строка цвета без цены ("18 pro Макс - Silver -")
+      if (!e.gb && e.rest) continue;
       cur = { model: e.model, gb: e.gb, sim: e.sim || secSim };
     } else {
       if (e.gb) cur.gb = e.gb;
-      if (e.sim) { cur.sim = e.sim; secSim = e.sim; } // отдельная строка SIM действует на все следующие заголовки
+      if (e.sim) { cur.sim = e.sim; secSim = e.sim; }
     }
   }
   return list;
@@ -399,7 +403,7 @@ function sortList(arr) {
     const x = a.it, y = b.it, d = secIdx(x) - secIdx(y);
     if (d) return d;
     if (x.cat === 'iPhone') return (modelNum(y.model) - modelNum(x.model)) || (modelRank(x.model) - modelRank(y.model)) || x.model.localeCompare(y.model) || (x.memN - y.memN) || x.color.localeCompare(y.color) || (a.i - b.i);
-    return (first[x.cat + '|' + x.model] - first[y.cat + '|' + y.model]) || (x.memN - y.memN) || (a.i - b.i);   // у остальных — порядок как в прайсе
+    return (first[x.cat + '|' + x.model] - first[y.cat + '|' + y.model]) || (x.memN - y.memN) || (a.i - b.i);
   }).map(z => z.it);
 }
 
@@ -566,7 +570,7 @@ window.saveBlockImage = (k, btn) => {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; }
     }
-    showOverlay(URL.createObjectURL(b), file);   // запасной вариант: превью + кнопка «Поделиться»
+    showOverlay(URL.createObjectURL(b), file);
   }).catch(() => alert('Не удалось создать картинку')).finally(() => { btn.innerHTML = old; });
 };
 
@@ -583,7 +587,8 @@ function blockText(k) {
     if (sec !== ls) { const ic = CAT_ICON[it.cat]; t += `\n${ic} *${sec}* ${ip ? '📱' : ic}\n`; ls = sec; lm = null; lst = null; }
     if (it.model !== lm) { const em = EMO[models.indexOf(it.model) % EMO.length]; t += `\n${em} *${it.model.toUpperCase()}* ${em}\n`; lm = it.model; lst = null; }
     if (it.storage !== lst) { if (it.storage) t += ip ? `📲 *${it.model} • ${it.storage}* 📱\n` : `▪️ *${it.model} • ${it.storage}*\n`; lst = it.storage; }
-    t += `${colorDot(it.color)} ${[it.color || it.model, it.extra, it.reg].filter(Boolean).join(' ')} — *${fmt(finalPrice(it))} ₽*\n`;
+    const tail = [it.color, it.extra, it.reg].filter(Boolean).join(' ');
+    t += `${colorDot(it.color)} ${tail || it.model} — *${fmt(finalPrice(it))} ₽*\n`;
   });
   t += `\n${ad.t1}\n${ad.s1}\n${ad.t2}\n${ad.s2}\n📞 ${ad.phone}`;
   return t;
@@ -599,7 +604,7 @@ window.runCompare = () => {
     const text = $('cmp' + s.toUpperCase()).value;
     if (!text.trim()) return;
     parseList(text).forEach(it => {
-      const k = [ign ? '' : secOf(it), it.cat, it.model.toUpperCase(), it.storage, /^glacier$/i.test(it.color) ? 'BLUE' : it.color.toUpperCase(), it.cat === 'MacBook' ? '' : it.extra, ign ? '' : it.reg].join('|');   // Glacier = Blue
+      const k = [ign ? '' : secOf(it), it.cat, it.model.toUpperCase(), it.storage, /^glacier$/i.test(it.color) ? 'BLUE' : it.color.toUpperCase(), it.cat === 'MacBook' ? '' : it.extra, ign ? '' : it.reg].join('|');
       let r = map.get(k);
       if (!r) { r = { cat: it.cat, model: it.model, gb: it.gb, memN: it.memN, mem: it.mem, storage: it.storage, sim: it.sim, color: it.color, extra: it.extra, reg: it.reg, a: null, b: null, c: null, d: null, aQty: 1, bQty: 1, cQty: 1, dQty: 1 }; map.set(k, r); }
       if (r[s] == null || it.buyPrice < r[s]) { r[s] = it.buyPrice; r[s + 'Qty'] = it.qty; }
@@ -681,6 +686,7 @@ window.clearAll = () => {
   $('postersOutput').innerHTML = '<div style="text-align:center;padding:30px;color:#64748b">Вставьте текст и нажмите «Рассчитать»</div>';
   items = []; blocks = []; ad = { ...defaultAd }; fMem.clear(); fModel.clear(); fCat.clear();
 };
+
 /* ================= ДОГОВОР ================= */
 const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const M = x => +String(x || '').replace(/\D/g, '') || 0;
@@ -716,7 +722,6 @@ function numWords(n) {
   return parts.join(' ');
 }
 
-// Разбор вставленного текста: ФИО, дата рождения, паспорт, кем/когда выдан, адрес, товар, цена
 function parseClient(t) {
   const r = {};
   t = t.replace(/\u00a0/g, ' ');
@@ -740,7 +745,7 @@ function parseClient(t) {
   m = t.match(/(?:адрес[^:\n]{0,25}|прописк[а-яё]*|зарегистрирован[а-яё]*|регистрация)\s*[:\-]?\s*([^\n]+)/i);
   if (m && m[1].trim()) r.adr = m[1].replace(/[,;\s]*(?:именуем|далее|в дальнейшем).*$/i, '').trim();
   else { const l = t.split('\n').find(l => /(г\.|ул\.|д\.|респ|обл|пр-кт|кв\.)/i.test(l) && !/выдан|МВД/i.test(l)); if (l) r.adr = l.trim(); }
-  const BAD = /респ|обл|мвд|дагест|махачкал|ул\.|выдан|паспорт|федер|российск|росси/i;
+  const BAD = /респ|обл|мвд|дагест|махачкал|ул\.|выдан|паспорт|федер|российск|росси|республик/i;
   m = t.match(/(?:фио|ф\.и\.о\.?|клиент|покупатель)\s*[:\-]\s*([^\n,;\d]+)/i);
   let fio = m ? m[1].trim() : '';
   if (!fio) { const q = t.match(/фамилия\s*[:\-]?\s*(\S+)\s+имя\s*[:\-]?\s*(\S+)\s+отчество\s*[:\-]?\s*(\S+)/i); if (q) fio = q[1] + ' ' + q[2] + ' ' + q[3]; }
@@ -757,9 +762,19 @@ const DG = [
   ['Договор', [['num', '№ договора'], ['date', 'Дата договора (дд.мм.гггг)']]],
   ['Покупатель', [['fio', 'ФИО', 1], ['bd', 'Дата рождения'], ['pd', 'Дата выдачи паспорта'], ['ps', 'Серия паспорта'], ['pn', 'Номер паспорта'], ['pw', 'Кем выдан', 1], ['adr', 'Адрес регистрации', 1]]],
   ['Товар и оплата', [['item', 'Товар', 1], ['price', 'Стоимость товара, ₽'], ['mark', 'Торговая накидка, ₽'], ['pre', 'Предоплата, ₽'], ['mon', 'Срок, месяцев']]],
-  ['Поручитель (если есть)', [['gfio', 'ФИО', 1], ['gbd', 'Дата рождения'], ['gpd', 'Дата выдачи паспорта'], ['gps', 'Серия'], ['gpn', 'Номер'], ['gpw', 'Кем выдан', 1], ['gadr', 'Адрес регистрации', 1]]]
+  ['Поручитель (если есть)', [['gfio', 'ФИО', 1], ['gbd', 'Дата рождения'], ['gpd', 'Дата выдачи паспорта'], ['gps', 'Серия'], ['gpn', 'Номер'], ['gpw', 'Кем выдан', 1], ['gadr', 'Адрес регистрации', 1]]],
+  ['Свидетель', [['wfio', 'ФИО свидетеля', 1], ['wbd', 'Дата рождения'], ['wphone', 'Телефон']]]
 ];
-const SELLER = [['sfio', 'ФИО продавца', 'Газиев Руслан Магомедович', 1], ['sbd', 'Дата рождения (например 13 апреля 2001)', '15 сентября 1984'], ['spd', 'Дата выдачи паспорта', '14.12.2023'], ['sps', 'Серия паспорта', '8223'], ['spn', 'Номер паспорта', '803670'], ['spw', 'Кем выдан', 'МВД по Республике Дагестан', 1], ['sc', 'Код подразделения', '050-002'], ['sadr', 'Адрес регистрации (впишите)', '', 1]];
+const SELLER = [
+  ['sfio', 'ФИО продавца', 'Газиев Руслан Магомедович', 1],
+  ['sbd', 'Дата рождения', '15.09.1984'],
+  ['spd', 'Дата выдачи паспорта', '14.12.2023'],
+  ['sps', 'Серия паспорта', '8223'],
+  ['spn', 'Номер паспорта', '803670'],
+  ['spw', 'Кем выдан', 'МВД по Республике Дагестан', 1],
+  ['sc', 'Код подразделения', '050-002'],
+  ['sadr', 'Адрес регистрации (впишите)', '', 1]
+];
 
 function docBuild() {
   $('docFields').innerHTML = DG.map(([t, f]) => `<div class="dgt">${t}</div><div class="dgrid">${f.map(([id, l, w]) => `<label class="${w ? 'w' : ''}">${l}<input id="d_${id}" autocomplete="off"></label>`).join('')}</div>`).join('');
@@ -772,11 +787,16 @@ function docBuild() {
 }
 function saveSeller() { const o = {}; SELLER.forEach(([id]) => o[id] = $('d_' + id).value); try { localStorage.setItem('fzSeller', JSON.stringify(o)); return true; } catch (e) { return false; } }
 window.sellSave = () => { alert(saveSeller() ? 'Данные продавца сохранены' : 'Не удалось сохранить в этом браузере'); docRender(); };
+window.sellReset = () => {
+  try { localStorage.removeItem('fzSeller'); } catch (e) {}
+  SELLER.forEach(([id, l, def]) => { const el = $('d_' + id); if (el) el.value = def; });
+  docRender();
+};
 window.sellParse = () => {
   const t = $('sellPaste').value, r = parseClient(t);
   if (!Object.keys(r).length) return alert('Не удалось распознать. Заполните поля вручную.');
   const cm = t.match(/\b(\d{3}-\d{3})\b/), bd = parseD(r.bd), put = (id, v) => { if (v) $('d_' + id).value = v; };
-  put('sfio', r.fio); put('sbd', bd ? bd.getDate() + ' ' + MONTHS[bd.getMonth()] + ' ' + bd.getFullYear() : '');
+  put('sfio', r.fio); put('sbd', bd ? pad2(bd.getDate()) + '.' + pad2(bd.getMonth() + 1) + '.' + bd.getFullYear() : r.bd);
   put('sps', r.ps); put('spn', r.pn); put('spw', (r.pw || '').replace(/,?\s*код подразделения.*$/i, '')); put('spd', r.pd); put('sc', cm ? cm[1] : ''); put('sadr', r.adr);
   saveSeller(); docRender();
 };
@@ -800,21 +820,40 @@ window.docClear = () => {
   $('docPick').value = '';
   docRender();
 };
-// Подбирает размер шрифта так, чтобы договор + приложение уместились на 2 листах A4
+
 function fitDoc() {
   const probe = $('docPaper').cloneNode(true);
   probe.removeAttribute('id');
   probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:192mm;padding:0;border-radius:0;line-height:1.2;box-sizing:border-box';
   document.body.appendChild(probe);
-  const maxH = 2 * 279 * 3.7795 * 0.93;      // два листа A4 (поля 9 мм) минус запас на разрывы страниц
+  const maxH = 2 * 279 * 3.7795 * 0.93;
   let fs = 10.5;
   for (; fs > 6.5; fs -= 0.25) { probe.style.fontSize = fs + 'pt'; if (probe.offsetHeight <= maxH) break; }
   probe.remove();
   document.documentElement.style.setProperty('--pfs', fs + 'pt');
   return fs;
 }
-window.docPrint = () => { fitDoc(); setTimeout(() => window.print(), 50); };
+window.docPrint = () => { fitDoc(); requestAnimationFrame(() => setTimeout(() => window.print(), 30)); };
 window.docCopy = () => copyText($('docPaper').innerText);
+
+window.docDownloadHTML = () => {
+  const css = document.querySelector('style').textContent;
+  const html = `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
+<title>Договор ${esc(docData().num || '')}</title>
+<style>${css}
+body{background:#fff;padding:20px;margin:0}
+.paper{margin:0 auto;max-width:210mm;box-shadow:none;font-size:12pt;line-height:1.35}
+.paper[contenteditable]{outline:none}
+@media print{body{padding:0}.paper{max-width:none}}
+</style></head>
+<body><div class="paper" contenteditable="true">${$('docPaper').innerHTML}</div></body></html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dogovor_' + (docData().num || 'draft') + '.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+};
 
 function docRender() {
   const d = docData(), price = M(d.price), mark = M(d.mark), pre = M(d.pre), mon = parseInt(d.mon) || 0, full = price + mark, rest = Math.max(0, full - pre);
@@ -828,7 +867,7 @@ function docHTML(d, s) {
   const R = x => x ? `<b>${fmt(x)}</b>` : '____________';
   const price = M(d.price), mark = M(d.mark), pre = M(d.pre), mon = parseInt(d.mon) || 0, full = price + mark, rest = Math.max(0, full - pre);
   const dt = parseD(d.date);
-  const dstr = dt ? `«${pad2(dt.getDate())}» ${MONTHS[dt.getMonth()]} ${dt.getFullYear()} г.` : '«____» ____________ 2026 г.';
+  const dstr = dt ? `«${pad2(dt.getDate())}» ${MONTHS[dt.getMonth()]} ${dt.getFullYear()} г.` : `«____» ____________ ${new Date().getFullYear()} г.`;
   const num = d.num ? esc(d.num) : '_____';
   let sch = '';
   if (mon && rest) {
@@ -839,7 +878,7 @@ function docHTML(d, s) {
       left -= amt;
       rows += `<tr><td>${i}</td><td>${dt ? fmtD(addMonths(dt, i)) : '__.__.____'}</td><td>${fmt(amt)} ₽</td><td>${fmt(Math.max(0, left))} ₽</td></tr>`;
     }
-    sch = `<table><tr><th>№</th><th>Дата платежа</th><th>Сумма платежа</th><th>Остаток долга</th></tr>${rows}</table>
+    sch = `<table><thead><tr><th>№</th><th>Дата платежа</th><th>Сумма платежа</th><th>Остаток долга</th></tr></thead><tbody>${rows}</tbody></table>
       <p>Полная стоимость Товара: <b>${fmt(full)}</b> руб.; предварительная оплата: <b>${fmt(pre)}</b> руб.; к оплате в рассрочку: <b>${fmt(rest)}</b> руб. в течение ${mon} мес.</p>`;
   } else sch = '<p>График платежей заполняется вручную (укажите стоимость, предоплату и срок).</p>';
   return `
@@ -873,6 +912,7 @@ function docHTML(d, s) {
 <p>4.1. Обязательства Покупателя по внесению платежей, в соответствии с Приложением 1, обеспечиваются залогом приобретенного Товара (далее - Предмет залога), указанного в п. 1.1. настоящего Договора.</p>
 <p>4.1.1. Подписанием настоящего договора Покупатель предоставляет купленный согласно настоящему договору товар в залог до момента полного погашения его стоимости. В силу настоящего договора Продавец приобретает все права залогодержателя, предусмотренные гражданским законодательством.</p>
 <p>Поручителями Покупателя по настоящему Договору являются: ${V(d.gfio, 40)}, дата рождения: ${V(d.gbd, 10)}г., паспортные данные: серия ${V(d.gps, 6)} номер ${V(d.gpn, 8)} выдан: ${V(d.gpw, 40)}, дата выдачи: ${V(d.gpd, 10)}г., адрес регистрации: ${V(d.gadr, 40)}.</p>
+<p><b>Свидетелем по настоящему Договору является:</b> ${V(d.wfio, 40)}, дата рождения: ${V(d.wbd, 10)}г., телефон: ${V(d.wphone, 20)}.</p>
 <h3>5. Ответственность Сторон</h3>
 <p>5.1. Стороны несут ответственность за неисполнение или ненадлежащее исполнение настоящего Договора в соответствии с действующим законодательством и настоящим Договором.</p>
 <p>5.2. Продавец отвечает за недостатки Товара, возникшие до его передачи Покупателю и подписания соответствующего акта приема-передачи.</p>
@@ -891,6 +931,7 @@ function docHTML(d, s) {
 <p>9.5. В случае изменения любого из указанных в настоящем Договоре реквизитов соответствующая Сторона обязуется уведомить другую Сторону любым доступным способом в течение 3 (трех) рабочих дней с момента наступления такого изменения.</p>
 <h3>10. Подписи Сторон</h3>
 <table class="sig"><tr><td>Продавец:<br><br>______________ / ${esc(shortName(s.sfio)) || '____________'}<br><small>(подпись / Ф.И.О.)</small></td><td>Покупатель:<br><br>______________ / ${esc(shortName(d.fio)) || '____________'}<br><small>(подпись / Ф.И.О.)</small></td></tr></table>
+<p style="margin-top:10px">Свидетель: ______________ / ${esc(shortName(d.wfio)) || '____________'}</p>
 <div style="height:.8em"></div>
 <h1>Приложение №1</h1>
 <p style="text-align:center">к Договору купли-продажи товара с рассрочкой платежа №${num} от ${dt ? fmtD(dt) : '__.__.____'}<br>График погашения задолженности</p>
