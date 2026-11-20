@@ -78,17 +78,26 @@ textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--br)
 details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summary{cursor:pointer;font-weight:700;color:#cbd5e1}
 .paper{background:#fff;color:#000;padding:18px 16px;border-radius:8px;font:13px/1.5 "Times New Roman",Times,serif;text-align:justify}
 .paper *{font-family:"Times New Roman",Times,serif}
-.paper h1{font-size:15px;text-align:center;margin:0 0 8px}.paper h3{font-size:13px;text-align:center;margin:12px 0 4px}
-.paper p{margin:5px 0}.paper .r{display:flex;justify-content:space-between;margin-bottom:8px}
-.paper table{width:100%;border-collapse:collapse;margin-top:8px}.paper td,.paper th{border:1px solid #000;padding:4px 6px;text-align:center}
-.paper table.sig td{border:0;text-align:left;vertical-align:top;width:50%;padding:10px 6px 0}
+.paper h1{font-size:1.15em;text-align:center;margin:0 0 .4em}.paper h3{font-size:1em;text-align:center;margin:.6em 0 .2em;break-after:avoid}
+.paper p{margin:.3em 0}.paper .r{display:flex;justify-content:space-between;margin-bottom:.4em}
+.paper table{width:100%;border-collapse:collapse;margin-top:.5em}.paper td,.paper th{border:1px solid #000;padding:.15em .45em;text-align:center}
+.paper table.sig td{border:0;text-align:left;vertical-align:top;width:50%;padding:.5em .4em 0}
 .paper .pb{page-break-before:always;margin-top:22px}
 @media print{
-  body{background:#fff;padding:0}
+  html,body{background:#fff!important;padding:0!important;margin:0!important}
+  .container{max-width:none!important;margin:0!important}
   .container>.tabs,.container>#viewShow,.container>#viewCmp{display:none!important}
   #viewDoc>*:not(#docPaper){display:none!important}
-  .paper{padding:0;border-radius:0;font-size:12pt}
-  @page{margin:15mm}
+  .paper{padding:10mm 11mm;border-radius:0;font-size:9.5pt;line-height:1.24}
+  .paper h1{font-size:12pt;margin:0 0 4px}
+  .paper h3{font-size:9.5pt;margin:5px 0 1px}
+  .paper p{margin:1.5px 0}
+  .paper .r{margin-bottom:4px}
+  .paper table{margin-top:4px;break-inside:avoid}
+  .paper td,.paper th{padding:1px 5px;font-size:9pt}
+  .paper table.sig td{padding:6px 6px 0}
+  .paper .pb{break-before:avoid;page-break-before:avoid;margin-top:8px}
+  @page{size:A4;margin:0}
 }
 .ov{position:fixed;inset:0;background:#000;z-index:99;overflow:auto;text-align:center;padding:10px}
 .ov img{width:100%;max-width:600px}.ov p{color:#fff}.ov button{padding:12px 20px;margin:4px;border:0;border-radius:8px;font-weight:700;font-size:15px}
@@ -158,7 +167,7 @@ details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summar
         <div class="btn-grid" style="margin:0 0 8px"><button class="btn btn-b" onclick="sellParse()">Заполнить из текста</button><button class="btn btn-calc" onclick="sellSave()">💾 Сохранить</button></div>
         <div id="docSeller" class="dgrid"></div></details>
       <div class="btn-grid" style="margin:12px 0 0">
-        <button class="btn btn-calc" onclick="docPrint()">🖨 Печать / PDF</button>
+        <button class="btn btn-calc" onclick="docPrint()">🖨 Печать / PDF (2 листа)</button>
         <button class="btn btn-b" onclick="docCopy()">📋 Копировать текст</button>
       </div>
     </div>
@@ -716,24 +725,26 @@ function parseClient(t) {
   const nd = x => x.replace(/[\/-]/g, '.').replace(/\b(\d)\./g, '0$1.').replace(/\.(\d)\./, '.0$1.');
   const DT = '(\\d{1,2}[.\\/-]\\d{1,2}[.\\/-]\\d{4})';
   const dates = (t.match(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}\b/g) || []).map(nd);
-  let m = t.match(new RegExp('(?:рожд[а-яё]*|д\\.?\\s?р\\.?)[^\\d\\n]{0,12}' + DT, 'i'));
+  let m = t.match(new RegExp('(?:рожд[а-яё]*|д\\.?\\s?р\\.?)[^\\d]{0,12}' + DT, 'i'));
   r.bd = m ? nd(m[1]) : (dates[0] || '');
-  m = t.match(new RegExp('(?:дата\\s*выдачи|выдан[а-яё]*)[^\\d\\n]{0,80}?' + DT, 'i'));
+  m = t.match(new RegExp('(?:дата\\s*выдачи|выдан[а-яё]*)[^\\d]{0,80}?' + DT, 'i'));
   r.pd = m ? nd(m[1]) : (dates.find(d => d !== r.bd) || '');
   m = t.match(/сери[яи]\D{0,4}(\d{2}\s?\d{2})\D{0,15}номер\D{0,4}(\d{6})/i) || t.match(/(?<!\d)(\d{2}\s?\d{2})[\s,;№Nn\-]*(\d{6})(?!\d)/);
   if (m) { r.ps = m[1].replace(/\s/g, ''); r.pn = m[2]; }
   const code = t.match(/\b(\d{3}-\d{3})\b/);
   m = t.match(/выдан[а-яё]*\s*[:\-]?\s*([^\n\d][^\n]*?)(?=\s*(?:[,;]?\s*(?:дата|код)|\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}|\d{3}-\d{3}|$))/im);
-  if (m) r.pw = m[1].replace(/[,;:\s]+$/, '');
+  if (m && !/^(росси|федер|рф\b)/i.test(m[1].trim())) r.pw = m[1].replace(/[,;:\s]+$/, '');
   else { const l = t.split('\n').find(l => /МВД|УФМС|ОУФМС|отдел/i.test(l)); if (l) r.pw = l.replace(/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}|\d{3}-\d{3}/g, '').replace(/[,;:\s]+$/, '').trim(); }
+  if (r.pw && !/[а-яё]/.test(r.pw)) r.pw = r.pw.split(/\s+/).map((w, i) => /^(МВД|УМВД|ОВД|УФМС|ОУФМС|ГУ|РД|РФ|ОП)$/.test(w) ? w : /^(ПО|В|Г|И|НА|С)$/.test(w) ? w.toLowerCase() : w[0] + w.slice(1).toLowerCase()).join(' ');
   if (r.pw && code) r.pw += ', код подразделения ' + code[1];
   m = t.match(/(?:адрес[^:\n]{0,25}|прописк[а-яё]*|зарегистрирован[а-яё]*|регистрация)\s*[:\-]?\s*([^\n]+)/i);
   if (m && m[1].trim()) r.adr = m[1].replace(/[,;\s]*(?:именуем|далее|в дальнейшем).*$/i, '').trim();
   else { const l = t.split('\n').find(l => /(г\.|ул\.|д\.|респ|обл|пр-кт|кв\.)/i.test(l) && !/выдан|МВД/i.test(l)); if (l) r.adr = l.trim(); }
-  const BAD = /респ|обл|мвд|дагест|махачкал|ул\.|выдан|паспорт/i;
+  const BAD = /респ|обл|мвд|дагест|махачкал|ул\.|выдан|паспорт|федер|российск|росси/i;
   m = t.match(/(?:фио|ф\.и\.о\.?|клиент|покупатель)\s*[:\-]\s*([^\n,;\d]+)/i);
   let fio = m ? m[1].trim() : '';
-  if (!fio) for (const x of t.matchAll(/(?<![А-ЯЁа-яё])[А-ЯЁ][а-яёА-ЯЁ]+(?:\s+[А-ЯЁ][а-яёА-ЯЁ]+){1,2}(?![а-яё])/g)) { if (!BAD.test(x[0])) { fio = x[0]; break; } }
+  if (!fio) { const q = t.match(/фамилия\s*[:\-]?\s*(\S+)\s+имя\s*[:\-]?\s*(\S+)\s+отчество\s*[:\-]?\s*(\S+)/i); if (q) fio = q[1] + ' ' + q[2] + ' ' + q[3]; }
+  if (!fio) for (const x of t.matchAll(/(?<![А-ЯЁа-яё])[А-ЯЁ][а-яёА-ЯЁ]+(?:[ \t]+[А-ЯЁ][а-яёА-ЯЁ]+){1,2}(?![а-яё])/g)) { if (!BAD.test(x[0])) { fio = x[0]; break; } }
   if (fio) r.fio = fio.split(/\s+/).map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   m = t.match(/(?:товар|модель)\s*[:\-]\s*([^\n]+)/i); if (m) r.item = m[1].trim();
   m = t.match(/(?:цена|стоимость)\s*[:\-]?\s*([\d ]{4,})/i); if (m) r.price = String(M(m[1]));
@@ -748,12 +759,12 @@ const DG = [
   ['Товар и оплата', [['item', 'Товар', 1], ['price', 'Стоимость товара, ₽'], ['mark', 'Торговая накидка, ₽'], ['pre', 'Предоплата, ₽'], ['mon', 'Срок, месяцев']]],
   ['Поручитель (если есть)', [['gfio', 'ФИО', 1], ['gbd', 'Дата рождения'], ['gpd', 'Дата выдачи паспорта'], ['gps', 'Серия'], ['gpn', 'Номер'], ['gpw', 'Кем выдан', 1], ['gadr', 'Адрес регистрации', 1]]]
 ];
-const SELLER = [['sfio', 'ФИО продавца', '', 1], ['sbd', 'Дата рождения (например 13 апреля 2001)', ''], ['spd', 'Дата выдачи паспорта', ''], ['sps', 'Серия паспорта', ''], ['spn', 'Номер паспорта', ''], ['spw', 'Кем выдан', '', 1], ['sc', 'Код подразделения', ''], ['sadr', 'Адрес регистрации', '', 1]];
+const SELLER = [['sfio', 'ФИО продавца', 'Газиев Руслан Магомедович', 1], ['sbd', 'Дата рождения (например 13 апреля 2001)', '15 сентября 1984'], ['spd', 'Дата выдачи паспорта', '14.12.2023'], ['sps', 'Серия паспорта', '8223'], ['spn', 'Номер паспорта', '803670'], ['spw', 'Кем выдан', 'МВД по Республике Дагестан', 1], ['sc', 'Код подразделения', '050-002'], ['sadr', 'Адрес регистрации (впишите)', '', 1]];
 
 function docBuild() {
   $('docFields').innerHTML = DG.map(([t, f]) => `<div class="dgt">${t}</div><div class="dgrid">${f.map(([id, l, w]) => `<label class="${w ? 'w' : ''}">${l}<input id="d_${id}" autocomplete="off"></label>`).join('')}</div>`).join('');
   let sv = {}; try { sv = JSON.parse(localStorage.getItem('fzSeller') || '{}'); } catch (e) {}
-  $('docSeller').innerHTML = SELLER.map(([id, l, def, w]) => `<label class="${w ? 'w' : ''}">${l}<input id="d_${id}" value="${esc(sv[id] != null ? sv[id] : def)}" autocomplete="off"></label>`).join('');
+  $('docSeller').innerHTML = SELLER.map(([id, l, def, w]) => `<label class="${w ? 'w' : ''}">${l}<input id="d_${id}" value="${esc(sv[id] ? sv[id] : def)}" autocomplete="off"></label>`).join('');
   $('d_date').value = fmtD(new Date());
   $('d_mon').value = '';
   $('docFields').addEventListener('input', docRender);
@@ -789,7 +800,20 @@ window.docClear = () => {
   $('docPick').value = '';
   docRender();
 };
-window.docPrint = () => window.print();
+// Подбирает размер шрифта так, чтобы договор + приложение уместились на 2 листах A4
+function fitDoc() {
+  const probe = $('docPaper').cloneNode(true);
+  probe.removeAttribute('id');
+  probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:192mm;padding:0;border-radius:0;line-height:1.2;box-sizing:border-box';
+  document.body.appendChild(probe);
+  const maxH = 2 * 279 * 3.7795 * 0.93;      // два листа A4 (поля 9 мм) минус запас на разрывы страниц
+  let fs = 10.5;
+  for (; fs > 6.5; fs -= 0.25) { probe.style.fontSize = fs + 'pt'; if (probe.offsetHeight <= maxH) break; }
+  probe.remove();
+  document.documentElement.style.setProperty('--pfs', fs + 'pt');
+  return fs;
+}
+window.docPrint = () => { fitDoc(); setTimeout(() => window.print(), 50); };
 window.docCopy = () => copyText($('docPaper').innerText);
 
 function docRender() {
@@ -867,7 +891,7 @@ function docHTML(d, s) {
 <p>9.5. В случае изменения любого из указанных в настоящем Договоре реквизитов соответствующая Сторона обязуется уведомить другую Сторону любым доступным способом в течение 3 (трех) рабочих дней с момента наступления такого изменения.</p>
 <h3>10. Подписи Сторон</h3>
 <table class="sig"><tr><td>Продавец:<br><br>______________ / ${esc(shortName(s.sfio)) || '____________'}<br><small>(подпись / Ф.И.О.)</small></td><td>Покупатель:<br><br>______________ / ${esc(shortName(d.fio)) || '____________'}<br><small>(подпись / Ф.И.О.)</small></td></tr></table>
-<div class="pb"></div>
+<div style="height:.8em"></div>
 <h1>Приложение №1</h1>
 <p style="text-align:center">к Договору купли-продажи товара с рассрочкой платежа №${num} от ${dt ? fmtD(dt) : '__.__.____'}<br>График погашения задолженности</p>
 ${sch}
