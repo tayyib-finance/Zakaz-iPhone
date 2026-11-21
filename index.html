@@ -17,7 +17,7 @@ body{background:var(--bg);color:#fff;margin:0;padding:16px 16px 40px}
 textarea{width:100%;height:110px;background:var(--bg);border:1px solid var(--br);color:#fff;padding:12px;border-radius:8px;font-size:13px;resize:vertical;outline:none;margin-bottom:10px;font-family:monospace;line-height:1.45}
 .btn{padding:12px;border-radius:8px;border:none;font-weight:700;font-size:14px;cursor:pointer}
 .btn-calc{background:var(--green);color:#000}.btn-clear{background:#334155;color:#fff}
-.markup-box{background:var(--card);border-radius:12px;padding:12px;margin-bottom:14px;display:none;border:1px solid var(--green);align-items:center;justify-content:space-between;gap:10px}
+.markup-box{background:var(--card);border-radius:12px;padding:12px;margin-bottom:14px;display:none;align-items:center;justify-content:space-between;gap:10px}
 .markup-box input,.rate-box input{width:110px;background:var(--bg);border:1px solid #475569;color:var(--green);padding:10px;border-radius:8px;font-size:16px;font-weight:700;text-align:center;outline:none}
 .stats-box{background:#1e3a8a;border:1px solid #3b82f6;border-radius:12px;padding:14px;margin-bottom:14px;display:none;justify-content:space-between}
 .st{font-size:13px;color:#93c5fd;margin-bottom:4px;font-weight:600}.sv{font-size:18px;font-weight:800}
@@ -174,11 +174,12 @@ details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summar
         </div>
         <div id="docSeller" class="dgrid"></div></details>
       <div class="btn-grid" style="margin:12px 0 0">
-        <button class="btn btn-calc" onclick="docPrint()">🖨 Печать / PDF (2 листа)</button>
+        <button class="btn btn-calc" onclick="docDownloadPDF(this)">📄 Скачать PDF (2 листа)</button>
         <button class="btn btn-b" onclick="docCopy()">📋 Копировать текст</button>
       </div>
       <div class="btn-grid" style="margin:8px 0 0">
-        <button class="btn btn-b" onclick="docDownloadHTML()">💾 Скачать HTML (редактируемый)</button>
+        <button class="btn btn-b" onclick="docDownloadHTML()">✏️ Скачать как Word/HTML (редактируемый)</button>
+        <button class="btn btn-clear" onclick="docPrint()">🖨 Печать (через браузер)</button>
       </div>
     </div>
     <div id="docCalc" class="note"></div>
@@ -187,6 +188,7 @@ details.dsel{margin-top:12px;color:var(--mut);font-size:13px}details.dsel summar
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 let items = [], cmpRows = [], blocks = [], markup = 3000, viewMode = 'all';
 const AED_USD = 3.68;
@@ -762,7 +764,7 @@ const DG = [
   ['Договор', [['num', '№ договора'], ['date', 'Дата договора (дд.мм.гггг)']]],
   ['Покупатель', [['fio', 'ФИО', 1], ['bd', 'Дата рождения'], ['pd', 'Дата выдачи паспорта'], ['ps', 'Серия паспорта'], ['pn', 'Номер паспорта'], ['pw', 'Кем выдан', 1], ['adr', 'Адрес регистрации', 1]]],
   ['Товар и оплата', [['item', 'Товар', 1], ['price', 'Стоимость товара, ₽'], ['mark', 'Торговая накидка, ₽'], ['pre', 'Предоплата, ₽'], ['mon', 'Срок, месяцев']]],
-  ['Поручитель (если есть)', [['gfio', 'ФИО', 1], ['gbd', 'Дата рождения'], ['gpd', 'Дата выдачи паспорта'], ['gps', 'Серия'], ['gpn', 'Номер'], ['gpw', 'Кем выдан', 1], ['gadr', 'Адрес регистрации', 1]]],
+  ['Поручитель (если есть)', [['gfio', 'ФИО', 1], ['gbd', 'Дата рождения'], ['gpd', 'Дата выдачи паспорта'], ['gps', 'Серия'], ['gpn', 'Номер'], ['gpw', 'Кем выдан', 1], ['gadr', 'Адрес регистрации', 1], ['gphone', 'Телефон поручителя']]],
   ['Свидетель', [['wfio', 'ФИО свидетеля', 1], ['wbd', 'Дата рождения'], ['wphone', 'Телефон']]]
 ];
 const SELLER = [
@@ -826,7 +828,7 @@ function fitDoc() {
   probe.removeAttribute('id');
   probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:192mm;padding:0;border-radius:0;line-height:1.2;box-sizing:border-box';
   document.body.appendChild(probe);
-  const maxH = 2 * 279 * 3.7795 * 0.93;
+  const maxH = 2 * 277 * 3.7795 * 0.93;   // 2 листа A4 за вычетом полей 10мм сверху/снизу, с запасом
   let fs = 10.5;
   for (; fs > 6.5; fs -= 0.25) { probe.style.fontSize = fs + 'pt'; if (probe.offsetHeight <= maxH) break; }
   probe.remove();
@@ -834,6 +836,41 @@ function fitDoc() {
   return fs;
 }
 window.docPrint = () => { fitDoc(); requestAnimationFrame(() => setTimeout(() => window.print(), 30)); };
+
+// Строит PDF сами, без системной «шапки» браузера (адрес страницы, дата, номер страницы)
+window.docDownloadPDF = async (btn) => {
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') return alert('Не удалось загрузить библиотеки PDF. Проверьте интернет и попробуйте ещё раз.');
+  const old = btn ? btn.innerHTML : ''; if (btn) btn.innerHTML = '⏳ Готовим PDF…';
+  try {
+    const src = $('docPaper');
+    const clone = src.cloneNode(true);
+    clone.style.cssText = 'position:absolute;left:-99999px;top:0;width:190mm;box-sizing:border-box;padding:0;border-radius:0;background:#fff;font-size:' + fitDoc() + 'pt';
+    document.body.appendChild(clone);
+    const scale = 2.5;
+    const canvas = await html2canvas(clone, { scale, backgroundColor: '#ffffff', useCORS: true, windowWidth: clone.scrollWidth });
+    clone.remove();
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297, marginX = 10, marginY = 10;
+    const contentWmm = pageW - marginX * 2, contentHmm = pageH - marginY * 2;
+    const pxPerMm = canvas.width / contentWmm;
+    const pageHpx = Math.floor(contentHmm * pxPerMm);
+    const totalPages = Math.max(1, Math.ceil(canvas.height / pageHpx));
+    for (let p = 0; p < totalPages; p++) {
+      if (p > 0) pdf.addPage();
+      const sy = p * pageHpx, sh = Math.min(pageHpx, canvas.height - sy);
+      const pc = document.createElement('canvas'); pc.width = canvas.width; pc.height = sh;
+      pc.getContext('2d').drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+      pdf.addImage(pc.toDataURL('image/jpeg', 0.95), 'JPEG', marginX, marginY, contentWmm, sh / pxPerMm);
+    }
+    pdf.save('dogovor_' + (docData().num || 'draft') + '.pdf');
+  } catch (e) {
+    alert('Не удалось создать PDF: ' + (e && e.message ? e.message : e));
+  } finally {
+    if (btn) btn.innerHTML = old;
+  }
+};
+
 window.docCopy = () => copyText($('docPaper').innerText);
 
 window.docDownloadHTML = () => {
@@ -911,7 +948,7 @@ function docHTML(d, s) {
 <h3>4. Обеспечение исполнения обязательств по договору</h3>
 <p>4.1. Обязательства Покупателя по внесению платежей, в соответствии с Приложением 1, обеспечиваются залогом приобретенного Товара (далее - Предмет залога), указанного в п. 1.1. настоящего Договора.</p>
 <p>4.1.1. Подписанием настоящего договора Покупатель предоставляет купленный согласно настоящему договору товар в залог до момента полного погашения его стоимости. В силу настоящего договора Продавец приобретает все права залогодержателя, предусмотренные гражданским законодательством.</p>
-<p>Поручителями Покупателя по настоящему Договору являются: ${V(d.gfio, 40)}, дата рождения: ${V(d.gbd, 10)}г., паспортные данные: серия ${V(d.gps, 6)} номер ${V(d.gpn, 8)} выдан: ${V(d.gpw, 40)}, дата выдачи: ${V(d.gpd, 10)}г., адрес регистрации: ${V(d.gadr, 40)}.</p>
+<p>Поручителями Покупателя по настоящему Договору являются: ${V(d.gfio, 40)}, дата рождения: ${V(d.gbd, 10)}г., паспортные данные: серия ${V(d.gps, 6)} номер ${V(d.gpn, 8)} выдан: ${V(d.gpw, 40)}, дата выдачи: ${V(d.gpd, 10)}г., адрес регистрации: ${V(d.gadr, 40)}, телефон: ${V(d.gphone, 16)}.</p>
 <p><b>Свидетелем по настоящему Договору является:</b> ${V(d.wfio, 40)}, дата рождения: ${V(d.wbd, 10)}г., телефон: ${V(d.wphone, 20)}.</p>
 <h3>5. Ответственность Сторон</h3>
 <p>5.1. Стороны несут ответственность за неисполнение или ненадлежащее исполнение настоящего Договора в соответствии с действующим законодательством и настоящим Договором.</p>
